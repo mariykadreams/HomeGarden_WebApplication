@@ -1,5 +1,5 @@
 ﻿using KursovaHomeGarden.Areas.Identity.Data;
-using KursovaHomeGarden.Models;
+using KursovaHomeGarden.Models.Category;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

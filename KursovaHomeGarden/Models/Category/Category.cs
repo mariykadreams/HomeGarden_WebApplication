@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace KursovaHomeGarden.Models
+namespace KursovaHomeGarden.Models.Category
 {
     public class Category
     {

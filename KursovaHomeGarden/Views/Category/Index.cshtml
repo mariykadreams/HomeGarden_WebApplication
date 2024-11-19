@@ -1,0 +1,114 @@
+﻿@using System.Data
+
+@model System.Data.DataTable
+@{
+    ViewBag.Title = "Category Management";
+}
+
+<h2 class="text-center mb-5">Category List</h2>
+
+<div class="mb-4">
+    <a class="btn btn-primary" asp-action="Create">Add New Category</a>
+</div>
+
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-danger">@ViewBag.Message</div>
+}
+
+@if (Model.Rows.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                @foreach (DataColumn column in Model.Columns)
+                {
+                    <th>@column.ColumnName</th>
+                }
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (DataRow row in Model.Rows)
+            {
+                <tr>
+                    @foreach (var item in row.ItemArray)
+                    {
+                        <td>@item</td>
+                    }
+                    <td>
+                        <a href="@Url.Action("Edit", "Category", new { id = row[0] })" class="btn btn-warning btn-sm">Edit</a>
+
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(@row[0])">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No categories found.</p>
+}
+
+<script type="text/javascript">
+    function confirmDelete(categoryId) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel",
+            customClass: {
+                confirmButton: 'btn btn-primary me-2',
+                cancelButton: 'btn btn-danger'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/Category/Delete/' + categoryId,
+                    type: 'POST',
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: 'Your category has been deleted.',
+                                icon: 'success',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                            setTimeout(function () {
+                                location.reload();
+                            }, 2000);
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message,
+                                icon: 'error',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Something went wrong.',
+                            icon: 'error',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>

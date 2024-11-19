@@ -25,6 +25,16 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"].ToString() == "Index" && ViewContext.RouteData.Values["controller"].ToString() == "Category" ? "active" : "")"
+                               asp-area="" asp-controller="Category" asp-action="Index">
+                                Category
+                                @if (ViewContext.RouteData.Values["action"].ToString() == "Index" && ViewContext.RouteData.Values["controller"].ToString() == "Category")
+                                {
+                                    <span class="visually-hidden">(current)</span>
+                                }
+                            </a>
+                        </li>
                     </ul>
 
                     <partial name="_LoginPartial"/>

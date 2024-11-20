@@ -1,5 +1,6 @@
 ﻿@using System.Data
 
+
 @model System.Data.DataTable
 @{
     ViewBag.Title = "Category Management";
@@ -83,7 +84,7 @@ else
                             });
                             setTimeout(function () {
                                 location.reload();
-                            }, 2000);
+                            }, 1000);
                         } else {
                             Swal.fire({
                                 title: 'Error!',

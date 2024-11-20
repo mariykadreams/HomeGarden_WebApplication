@@ -1,13 +1,13 @@
-﻿@model List<KursovaHomeGarden.Models.Category.Category>
+﻿@model List<KursovaHomeGarden.Models.CareLevel.CareLevel>
 
 @{
-    ViewBag.Title = "Category Management";
+    ViewData["Title"] = "Care Levels Management";
 }
 
-<h2 class="text-center mb-5">Category List</h2>
+<h2 class="text-center mb-5">List of Care Levels</h2>
 
 <div class="mb-4">
-    <a class="btn btn-primary" asp-action="Create">Add New Category</a>
+    <a class="btn btn-primary" asp-controller="CareLevel" asp-action="Create">Add New Care Level</a>
 </div>
 
 @if (ViewBag.Message != null)
@@ -20,21 +20,20 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Category ID</th>
-                <th>Category Name</th>
+                <th>Care Level ID</th>
+                <th>Care Level Name</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var category in Model)
+            @foreach (var careLevel in Model)
             {
                 <tr>
-                    <td>@category.category_id</td>
-                    <td>@category.category_name</td>
+                    <td>@careLevel.care_level_id</td>
+                    <td>@careLevel.level_name</td>
                     <td>
-                        <a href="@Url.Action("Edit", "Category", new { id = category.category_id })" class="btn btn-warning btn-sm">Edit</a>
-
-                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(@category.category_id)">Delete</button>
+                        <a href="@Url.Action("Edit", "CareLevel", new { id = careLevel.care_level_id })" class="btn btn-warning btn-sm">Edit</a>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(@careLevel.care_level_id)">Delete</button>
                     </td>
                 </tr>
             }
@@ -43,11 +42,11 @@
 }
 else
 {
-    <p>No categories found.</p>
+    <p>No care levels found.</p>
 }
 
 <script type="text/javascript">
-    function confirmDelete(categoryId) {
+    function confirmDelete(careLevelId) {
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -63,13 +62,13 @@ else
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/Category/Delete/' + categoryId,
+                    url: '/CareLevel/Delete/' + careLevelId,
                     type: 'POST',
                     success: function (response) {
                         if (response.success) {
                             Swal.fire({
                                 title: 'Deleted!',
-                                text: 'Your category has been deleted.',
+                                text: 'The care level has been deleted.',
                                 icon: 'success',
                                 customClass: {
                                     confirmButton: 'btn btn-primary'
@@ -78,7 +77,7 @@ else
                             });
                             setTimeout(function () {
                                 location.reload();
-                            }, 1000);
+                            }, 2000);
                         } else {
                             Swal.fire({
                                 title: 'Error!',

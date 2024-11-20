@@ -1,36 +1,27 @@
-﻿
-@model KursovaHomeGarden.Models.Category.Category
+﻿@model KursovaHomeGarden.Models.CareLevel.CareLevel
 
-@{
-    ViewData["Title"] = "Edit Category";
-}
 
 <div class="row">
     <div class="col-md-8 mx-auto rounded border p-3">
-        <h2 class="text-center mb-5">Edit Category</h2>
+        <h2 class="text-center mb-5">New Care Level</h2>
 
-        <form method="post" enctype="multipart/form-data" id="category-form">
-            <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Id</label>
-                <div class="col-sm-8">
-                    <input class="form-control" readonly value="@ViewData["category_id"]">
-                </div>
-            </div>
-
+        <form method="post" enctype="multipart/form-data" id="care-level-form">
+            <!-- Care Level Name -->
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Name</label>
                 <div class="col-sm-8">
-                    <input class="form-control" asp-for="category_name" value="@Model.category_name">
-                    <span asp-validation-for="category_name" class="text-danger"></span>
+                    <input class="form-control" asp-for="level_name" placeholder="Enter care level name">
+                    <span asp-validation-for="level_name" class="text-danger"></span>
                 </div>
             </div>
 
+            <!-- Actions -->
             <div class="row">
                 <div class="offset-sm-4 col-sm-4 d-grid">
-                    <button type="submit" class="btn btn-primary" id="submit-button">Save Changes</button>
+                    <button type="submit" class="btn btn-primary" id="submit-button">Submit</button>
                 </div>
                 <div class="col-sm-4 d-grid">
-                    <a class="btn btn-outline-primary" id="cancel-button" asp-controller="Category" asp-action="Index" role="button">Cancel</a>
+                    <a class="btn btn-outline-primary" id="cancel-button" asp-controller="CareLevel" asp-action="Index" role="button">Cancel</a>
                 </div>
             </div>
         </form>
@@ -41,16 +32,16 @@
     document.addEventListener("DOMContentLoaded", function () {
         let cancelButton = document.getElementById("cancel-button");
         let submitButton = document.getElementById("submit-button");
-        let form = document.getElementById("category-form");
+        let form = document.getElementById("care-level-form");
 
         cancelButton.addEventListener("click", function (e) {
             e.preventDefault();
             Swal.fire({
-                title: "Are you sure?",
-                text: "You won't be able to revert this!",
+                title: "Cancel creation?",
+                text: "Any entered data will be lost.",
                 icon: "warning",
                 showCancelButton: true,
-                confirmButtonText: "Yes, leave!",
+                confirmButtonText: "Yes, cancel!",
                 cancelButtonText: "No, stay!",
                 customClass: {
                     confirmButton: 'btn btn-primary me-2',
@@ -59,7 +50,7 @@
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '@Url.Action("Index", "Category")';
+                    window.location.href = '@Url.Action("Index", "CareLevel")';
                 }
             });
         });
@@ -67,11 +58,11 @@
         submitButton.addEventListener("click", function (e) {
             e.preventDefault();
             Swal.fire({
-                title: "Save changes?",
-                text: "Are you sure you want to save the changes to this category?",
+                title: "Submit new care level?",
+                text: "Are you sure you want to create a new care level?",
                 icon: "question",
                 showCancelButton: true,
-                confirmButtonText: "Yes, save!",
+                confirmButtonText: "Yes, submit!",
                 cancelButtonText: "No, cancel!",
                 customClass: {
                     confirmButton: 'btn btn-primary me-2',

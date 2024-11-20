@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using Microsoft.Data.SqlClient;
-using KursovaHomeGarden.Models;
 using KursovaHomeGarden.Models.Category;
 
 public class CategoryController : Controller
@@ -16,17 +15,26 @@ public class CategoryController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-        DataTable categoryTable = new DataTable();
+        var categories = new List<Category>();
         try
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT * FROM Categories";
+                const string query = "SELECT * FROM Categories";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     connection.Open();
-                    SqlDataAdapter adapter = new SqlDataAdapter(command);
-                    adapter.Fill(categoryTable);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            categories.Add(new Category
+                            {
+                                category_id = Convert.ToInt32(reader["category_id"]),
+                                category_name = reader["category_name"].ToString()
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -35,7 +43,7 @@ public class CategoryController : Controller
             ViewBag.Message = $"Error: {ex.Message}";
         }
 
-        return View(categoryTable);
+        return View(categories);
     }
 
     [HttpGet]
@@ -45,26 +53,21 @@ public class CategoryController : Controller
     }
 
     [HttpPost]
-    public IActionResult Create(CategoryDto categoryDto)
+    public IActionResult Create(Category category)
     {
-        if (string.IsNullOrWhiteSpace(categoryDto.category_name))
-        {
-            ModelState.AddModelError("category_name", "Category name is required.");
-        }
-
         if (!ModelState.IsValid)
         {
-            return View(categoryDto);
+            return View(category);
         }
 
         try
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "INSERT INTO Categories (category_name) VALUES (@categoryName)";
+                const string query = "INSERT INTO Categories (category_name) VALUES (@categoryName)";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@categoryName", categoryDto.category_name);
+                    command.Parameters.AddWithValue("@categoryName", category.category_name);
                     connection.Open();
                     command.ExecuteNonQuery();
                 }
@@ -75,69 +78,69 @@ public class CategoryController : Controller
         catch (Exception ex)
         {
             ViewBag.Message = $"Error: {ex.Message}";
-            return View(categoryDto);
+            return View(category);
         }
     }
 
     [HttpGet]
     public IActionResult Edit(int id)
     {
-        DataTable categoryTable = new DataTable();
+        Category category = null;
+
         try
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT * FROM Categories WHERE category_id = @categoryId";
+                const string query = "SELECT * FROM Categories WHERE category_id = @categoryId";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@categoryId", id);
                     connection.Open();
-                    SqlDataAdapter adapter = new SqlDataAdapter(command);
-                    adapter.Fill(categoryTable);
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            category = new Category
+                            {
+                                category_id = Convert.ToInt32(reader["category_id"]),
+                                category_name = reader["category_name"].ToString()
+                            };
+                        }
+                    }
                 }
             }
 
-            if (categoryTable.Rows.Count == 0)
+            if (category == null)
             {
                 return RedirectToAction("Index");
             }
-
-            var categoryDto = new CategoryDto
-            {
-                category_name = categoryTable.Rows[0]["category_name"].ToString()
-            };
-
-            ViewData["category_id"] = id;
-            return View(categoryDto);
         }
         catch (Exception ex)
         {
             ViewBag.Message = $"Error: {ex.Message}";
-            return View();
+            return RedirectToAction("Index");
         }
+
+        return View(category);
     }
 
     [HttpPost]
-    public IActionResult Edit(int id, CategoryDto categoryDto)
+    public IActionResult Edit(int id, Category category)
     {
-        if (string.IsNullOrWhiteSpace(categoryDto.category_name))
-        {
-            ModelState.AddModelError("category_name", "Category name is required.");
-        }
-
         if (!ModelState.IsValid)
         {
-            return View(categoryDto);
+            return View(category);
         }
 
         try
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "UPDATE Categories SET category_name = @categoryName WHERE category_id = @categoryId";
+                const string query = "UPDATE Categories SET category_name = @categoryName WHERE category_id = @categoryId";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@categoryName", categoryDto.category_name);
+                    command.Parameters.AddWithValue("@categoryName", category.category_name);
                     command.Parameters.AddWithValue("@categoryId", id);
                     connection.Open();
                     command.ExecuteNonQuery();
@@ -149,7 +152,7 @@ public class CategoryController : Controller
         catch (Exception ex)
         {
             ViewBag.Message = $"Error: {ex.Message}";
-            return View(categoryDto);
+            return View(category);
         }
     }
 
@@ -160,7 +163,7 @@ public class CategoryController : Controller
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "DELETE FROM Categories WHERE category_id = @categoryId";
+                const string query = "DELETE FROM Categories WHERE category_id = @categoryId";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@categoryId", id);
@@ -168,6 +171,7 @@ public class CategoryController : Controller
                     command.ExecuteNonQuery();
                 }
             }
+
             return Json(new { success = true });
         }
         catch (SqlException ex)

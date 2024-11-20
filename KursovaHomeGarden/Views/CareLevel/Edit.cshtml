@@ -1,36 +1,35 @@
-﻿
-@model KursovaHomeGarden.Models.Category.Category
+﻿@model KursovaHomeGarden.Models.CareLevel.CareLevel
 
-@{
-    ViewData["Title"] = "Edit Category";
-}
 
 <div class="row">
     <div class="col-md-8 mx-auto rounded border p-3">
-        <h2 class="text-center mb-5">Edit Category</h2>
+        <h2 class="text-center mb-5">Edit Care Level</h2>
 
-        <form method="post" enctype="multipart/form-data" id="category-form">
+        <form method="post" enctype="multipart/form-data" id="care-level-form">
+            <!-- Care Level ID -->
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Id</label>
                 <div class="col-sm-8">
-                    <input class="form-control" readonly value="@ViewData["category_id"]">
+                    <input class="form-control" readonly value="@Model.care_level_id" name="care_level_id">
                 </div>
             </div>
 
+            <!-- Care Level Name -->
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Name</label>
                 <div class="col-sm-8">
-                    <input class="form-control" asp-for="category_name" value="@Model.category_name">
-                    <span asp-validation-for="category_name" class="text-danger"></span>
+                    <input class="form-control" asp-for="level_name" placeholder="Enter care level name">
+                    <span asp-validation-for="level_name" class="text-danger"></span>
                 </div>
             </div>
 
+            <!-- Actions -->
             <div class="row">
                 <div class="offset-sm-4 col-sm-4 d-grid">
                     <button type="submit" class="btn btn-primary" id="submit-button">Save Changes</button>
                 </div>
                 <div class="col-sm-4 d-grid">
-                    <a class="btn btn-outline-primary" id="cancel-button" asp-controller="Category" asp-action="Index" role="button">Cancel</a>
+                    <a class="btn btn-outline-primary" id="cancel-button" asp-controller="CareLevel" asp-action="Index" role="button">Cancel</a>
                 </div>
             </div>
         </form>
@@ -41,13 +40,13 @@
     document.addEventListener("DOMContentLoaded", function () {
         let cancelButton = document.getElementById("cancel-button");
         let submitButton = document.getElementById("submit-button");
-        let form = document.getElementById("category-form");
+        let form = document.getElementById("care-level-form");
 
         cancelButton.addEventListener("click", function (e) {
             e.preventDefault();
             Swal.fire({
                 title: "Are you sure?",
-                text: "You won't be able to revert this!",
+                text: "You won't save any changes.",
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonText: "Yes, leave!",
@@ -59,7 +58,7 @@
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '@Url.Action("Index", "Category")';
+                    window.location.href = '@Url.Action("Index", "CareLevel")';
                 }
             });
         });
@@ -68,7 +67,7 @@
             e.preventDefault();
             Swal.fire({
                 title: "Save changes?",
-                text: "Are you sure you want to save the changes to this category?",
+                text: "Are you sure you want to save the changes to this care level?",
                 icon: "question",
                 showCancelButton: true,
                 confirmButtonText: "Yes, save!",

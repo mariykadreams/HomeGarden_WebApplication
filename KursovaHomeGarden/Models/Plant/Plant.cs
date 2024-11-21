@@ -9,17 +9,31 @@ namespace KursovaHomeGarden.Models.Plant
     {
         [Key]
         public int plant_id { get; set; }
+
+        [Required]
+        [Display(Name = "Name")]
         public string name { get; set; }
+
+        [Display(Name = "Description")]
         public string description { get; set; }
+
+        [Required]
+        [Range(0, double.MaxValue, ErrorMessage = "Price cannot be less than 0.")]
+        [Column(TypeName = "decimal(18,2)")]
         public decimal price { get; set; }
+
+
         public string img { get; set; }
 
+        [Required]
         public int category_id { get; set; }
         [ForeignKey("category_id")]
         public Category.Category Category { get; set; }
 
+        [Required]
         public int care_level_id { get; set; }
         [ForeignKey("care_level_id")]
         public CareLevel.CareLevel CareLevel { get; set; }
     }
+
 }

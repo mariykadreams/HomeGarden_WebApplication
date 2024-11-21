@@ -104,7 +104,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasKey("care_level_id");
 
-                    b.ToTable("CareLevels");
+                    b.ToTable("CareLevels", (string)null);
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.Category.Category", b =>
@@ -121,7 +121,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasKey("category_id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.Plant.Plant", b =>
@@ -159,7 +159,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasIndex("category_id");
 
-                    b.ToTable("Plants");
+                    b.ToTable("Plants", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

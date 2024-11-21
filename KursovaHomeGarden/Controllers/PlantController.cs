@@ -15,7 +15,7 @@ namespace KursovaHomeGarden.Controllers
 
         public PlantsController(IConfiguration configuration, IWebHostEnvironment environment)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
             _environment = environment;
         }
 
@@ -280,12 +280,13 @@ namespace KursovaHomeGarden.Controllers
             return categories;
         }
 
+
         private List<SelectListItem> GetCareLevels()
         {
             List<SelectListItem> careLevels = new List<SelectListItem>();
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT care_level_id, care_name FROM Care_level";
+                string query = "SELECT care_level_id, level_name FROM CareLevels";  // Ensure correct column names
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     connection.Open();
@@ -295,12 +296,14 @@ namespace KursovaHomeGarden.Controllers
                         careLevels.Add(new SelectListItem
                         {
                             Value = reader["care_level_id"].ToString(),
-                            Text = reader["care_name"].ToString()
+                            Text = reader["level_name"].ToString()  // Make sure 'level_name' is correct
                         });
                     }
                 }
             }
             return careLevels;
         }
+
+
     }
 }

@@ -1,5 +1,123 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@model KursovaHomeGarden.Models.Plant.Plant
+
+<div class="row">
+    <div class="col-md-8 mx-auto rounded border p-3">
+        <h2 class="text-center mb-5">Edit Plant</h2>
+
+        <form method="post" enctype="multipart/form-data" id="plant-form">
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Plant Name</label>
+                <div class="col-sm-8">
+                    <input class="form-control" asp-for="name" />
+                    <span asp-validation-for="name" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Description</label>
+                <div class="col-sm-8">
+                    <textarea class="form-control" asp-for="description"></textarea>
+                    <span asp-validation-for="description" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Price</label>
+                <div class="col-sm-8">
+                    <input class="form-control" asp-for="price" />
+                    <span asp-validation-for="price" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Category</label>
+                <div class="col-sm-8">
+                    <select class="form-control" asp-for="category_id" asp-items="ViewBag.Categories"></select>
+                    <span asp-validation-for="category_id" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Care Level</label>
+                <div class="col-sm-8">
+                    <select class="form-control" asp-for="care_level_id" asp-items="ViewBag.CareLevels"></select>
+                    <span asp-validation-for="care_level_id" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Current Image</label>
+                <div class="col-sm-8">
+                    <img src="/images/plants/@Model.img" width="150" />
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">New Image</label>
+                <div class="col-sm-8">
+                    <input type="file" class="form-control" asp-for="img" />
+                    <span asp-validation-for="img" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="offset-sm-4 col-sm-4 d-grid">
+                    <button type="submit" class="btn btn-primary" id="submit-button">Save Changes</button>
+                </div>
+                <div class="col-sm-4 d-grid">
+                    <a class="btn btn-outline-primary" id="cancel-button" asp-controller="Plants" asp-action="Index" role="button">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let cancelButton = document.getElementById("cancel-button");
+        let submitButton = document.getElementById("submit-button");
+        let form = document.getElementById("plant-form");
+
+        cancelButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to revert this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, leave!",
+                cancelButtonText: "No, stay!",
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '@Url.Action("Index", "Plants")';
+                }
+            });
+        });
+
+        submitButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: "Save changes?",
+                text: "Are you sure you want to save the changes to this plant?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Yes, save!",
+                cancelButtonText: "No, cancel!",
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('plant-form').submit();
+                }
+            });
+        });
+    });
+</script>

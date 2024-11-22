@@ -69,6 +69,21 @@ namespace KursovaHomeGarden.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(ActionFrequency actionFrequency)
         {
+
+            System.Diagnostics.Debug.WriteLine($"Create method started");
+            System.Diagnostics.Debug.WriteLine($"Received action frequency: PlantId={actionFrequency.plant_id}, SeasonId={actionFrequency.season_id}, ActionTypeId={actionFrequency.action_type_id}, Volume={actionFrequency.volume}");
+            System.Diagnostics.Debug.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
+
+            if (!ModelState.IsValid)
+            {
+                foreach (var modelStateEntry in ModelState.Values)
+                {
+                    foreach (var error in modelStateEntry.Errors)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Validation error: {error.ErrorMessage}");
+                    }
+                }
+            }
             // Add validation checks similar to PlantController
             if (string.IsNullOrWhiteSpace(actionFrequency.Interval))
             {

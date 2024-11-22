@@ -17,12 +17,6 @@
 
 
     <div class="form-group">
-        <label asp-for="volume" class="control-label">Volume</label>
-        <input asp-for="volume" class="form-control" />
-        <span asp-validation-for="volume" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
         <label asp-for="plant_id" class="control-label">Plant</label>
         <select asp-for="plant_id" class="form-control" asp-items="ViewBag.Plants">
             <option value="">Select Plant</option>

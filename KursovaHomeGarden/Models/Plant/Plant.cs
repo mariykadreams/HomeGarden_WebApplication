@@ -22,18 +22,20 @@ namespace KursovaHomeGarden.Models.Plant
         [Column(TypeName = "decimal(18,2)")]
         public decimal price { get; set; }
 
-
-        public string img { get; set; }
+        // Remove any validation from img since it's optional
+        public string? img { get; set; }
 
         [Required]
         public int category_id { get; set; }
-        [ForeignKey("category_id")]
-        public Category.Category Category { get; set; }
+
+        // Remove [Required] from navigation properties
+        public Category.Category? Category { get; set; }
 
         [Required]
         public int care_level_id { get; set; }
-        [ForeignKey("care_level_id")]
-        public CareLevel.CareLevel CareLevel { get; set; }
+
+        public CareLevel.CareLevel? CareLevel { get; set; }
     }
+
 
 }

@@ -30,11 +30,12 @@ namespace KursovaHomeGarden.Controllers
                     string query = @"
                         SELECT p.plant_id, p.name, p.description, p.price, 
                                p.category_id, c.category_name, 
-                               p.care_level_id, cl.care_name, 
+                               p.care_level_id, cl.level_name,
                                p.img 
                         FROM Plants p
                         JOIN Categories c ON p.category_id = c.category_id
-                        JOIN Care_level cl ON p.care_level_id = cl.care_level_id";
+                        JOIN CareLevels cl ON p.care_level_id = cl.care_level_id";
+
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
                         connection.Open();
@@ -58,7 +59,7 @@ namespace KursovaHomeGarden.Controllers
                                 CareLevel = new CareLevel
                                 {
                                     care_level_id = (int)reader["care_level_id"],
-                                    level_name = reader["care_name"].ToString()
+                                    level_name = reader["level_name"].ToString()
                                 },
                                 img = reader["img"].ToString()
                             });
@@ -93,6 +94,20 @@ namespace KursovaHomeGarden.Controllers
         [HttpPost]
         public IActionResult Create(Plant plant)
         {
+            // Логируем полученные данные
+            System.Diagnostics.Debug.WriteLine($"Create method started");
+            System.Diagnostics.Debug.WriteLine($"Received plant: Name={plant.name}, Price={plant.price}, CategoryId={plant.category_id}, CareLevelId={plant.care_level_id}");
+            System.Diagnostics.Debug.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
+
+            // Проверяем ошибки валидации
+            foreach (var modelState in ModelState.Values)
+            {
+                foreach (var error in modelState.Errors)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Validation error: {error.ErrorMessage}");
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(plant.name))
             {
                 ModelState.AddModelError("name", "Name is required.");
@@ -103,8 +118,35 @@ namespace KursovaHomeGarden.Controllers
                 ModelState.AddModelError("price", "Price must be greater than 0.");
             }
 
+            string fileName = string.Empty;
+            if (HttpContext.Request.Form.Files["img"] is IFormFile imageFile)
+            {
+                System.Diagnostics.Debug.WriteLine($"Processing image file: {imageFile.FileName}");
+                var filePath = Path.Combine(_environment.WebRootPath, "images/plants");
+                if (!Directory.Exists(filePath))
+                {
+                    Directory.CreateDirectory(filePath);
+                }
+
+                fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                var fullPath = Path.Combine(filePath, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    imageFile.CopyTo(stream);
+                }
+
+                plant.img = fileName;
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("No image file received");
+                plant.img = null;
+            }
+
             if (!ModelState.IsValid)
             {
+                System.Diagnostics.Debug.WriteLine("ModelState is invalid, returning to view");
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
                 return View(plant);
@@ -112,29 +154,15 @@ namespace KursovaHomeGarden.Controllers
 
             try
             {
-                string fileName = string.Empty;
-
-                if (HttpContext.Request.Form.Files["Imagefile"] is IFormFile imageFile)
-                {
-                    var filePath = Path.Combine(_environment.WebRootPath, "images/plants");
-                    fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                    var fullPath = Path.Combine(filePath, fileName);
-
-                    using (var stream = new FileStream(fullPath, FileMode.Create))
-                    {
-                        imageFile.CopyTo(stream);
-                    }
-
-                    plant.img = fileName;
-                }
-
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
+                    System.Diagnostics.Debug.WriteLine($"Connection string: {_connectionString}");
                     string query = "INSERT INTO Plants (name, description, price, category_id, care_level_id, img) " +
                                    "VALUES (@name, @description, @price, @category_id, @care_level_id, @img)";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
+                        System.Diagnostics.Debug.WriteLine("Setting up SQL parameters");
                         command.Parameters.AddWithValue("@name", plant.name);
                         command.Parameters.AddWithValue("@description", plant.description ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@price", plant.price);
@@ -143,20 +171,28 @@ namespace KursovaHomeGarden.Controllers
                         command.Parameters.AddWithValue("@img", plant.img ?? (object)DBNull.Value);
 
                         connection.Open();
-                        command.ExecuteNonQuery();
+                        System.Diagnostics.Debug.WriteLine("Executing SQL command");
+                        var rowsAffected = command.ExecuteNonQuery();
+                        System.Diagnostics.Debug.WriteLine($"Rows affected: {rowsAffected}");
                     }
                 }
 
+                System.Diagnostics.Debug.WriteLine("Successfully inserted plant, redirecting to Index");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error inserting plant: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 ViewBag.Message = $"Error: {ex.Message}";
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
                 return View(plant);
             }
         }
+
+
+
 
         [HttpGet]
         public IActionResult Edit(int id)
@@ -178,11 +214,11 @@ namespace KursovaHomeGarden.Controllers
                             {
                                 plant_id = (int)reader["plant_id"],
                                 name = reader["name"].ToString(),
-                                description = reader["description"].ToString(),
+                                description = reader["description"] == DBNull.Value ? null : reader["description"].ToString(),
                                 price = (decimal)reader["price"],
                                 category_id = (int)reader["category_id"],
                                 care_level_id = (int)reader["care_level_id"],
-                                img = reader["img"].ToString()
+                                img = reader["img"] == DBNull.Value ? null : reader["img"].ToString()
                             };
                         }
                     }
@@ -204,9 +240,14 @@ namespace KursovaHomeGarden.Controllers
             }
         }
 
+
         [HttpPost]
         public IActionResult Edit(Plant plant)
         {
+            // Add logging
+            System.Diagnostics.Debug.WriteLine($"Edit method started");
+            System.Diagnostics.Debug.WriteLine($"Received plant: ID={plant.plant_id}, Name={plant.name}, Price={plant.price}");
+
             if (string.IsNullOrWhiteSpace(plant.name))
             {
                 ModelState.AddModelError("name", "Name is required.");
@@ -215,6 +256,57 @@ namespace KursovaHomeGarden.Controllers
             if (plant.price <= 0)
             {
                 ModelState.AddModelError("price", "Price must be greater than 0.");
+            }
+
+         
+
+            string currentImg = null;
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "SELECT img FROM Plants WHERE plant_id = @plant_id";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@plant_id", plant.plant_id);
+                    connection.Open();
+                    var result = command.ExecuteScalar();
+                    currentImg = result == DBNull.Value ? null : (string)result;
+                }
+            }
+
+
+            // Handle image upload
+            if (HttpContext.Request.Form.Files["img"] is IFormFile imageFile)
+            {
+                var filePath = Path.Combine(_environment.WebRootPath, "images/plants");
+                if (!Directory.Exists(filePath))
+                {
+                    Directory.CreateDirectory(filePath);
+                }
+
+                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                var fullPath = Path.Combine(filePath, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    imageFile.CopyTo(stream);
+                }
+
+                // Delete old image if exists
+                if (!string.IsNullOrEmpty(currentImg))
+                {
+                    var oldImagePath = Path.Combine(_environment.WebRootPath, "images/plants", currentImg);
+                    if (System.IO.File.Exists(oldImagePath))
+                    {
+                        System.IO.File.Delete(oldImagePath);
+                    }
+                }
+
+                plant.img = fileName;
+            }
+            else
+            {
+                // Если новая картинка не загружена, сохраняем текущую
+                plant.img = currentImg;
             }
 
             if (!ModelState.IsValid)
@@ -229,20 +321,21 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     string query = "UPDATE Plants SET name = @name, description = @description, price = @price, " +
-                                   "category_id = @category_id, care_level_id = @care_level_id, img = @img " +
-                                   "WHERE plant_id = @plant_id";
+                                  "category_id = @category_id, care_level_id = @care_level_id, img = @img " +
+                                  "WHERE plant_id = @plant_id";
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
+                        command.Parameters.AddWithValue("@plant_id", plant.plant_id);
                         command.Parameters.AddWithValue("@name", plant.name);
                         command.Parameters.AddWithValue("@description", plant.description ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@price", plant.price);
                         command.Parameters.AddWithValue("@category_id", plant.category_id);
                         command.Parameters.AddWithValue("@care_level_id", plant.care_level_id);
                         command.Parameters.AddWithValue("@img", plant.img ?? (object)DBNull.Value);
-                        command.Parameters.AddWithValue("@plant_id", plant.plant_id);
 
                         connection.Open();
-                        command.ExecuteNonQuery();
+                        var rowsAffected = command.ExecuteNonQuery();
+                        System.Diagnostics.Debug.WriteLine($"Rows affected: {rowsAffected}");
                     }
                 }
 
@@ -250,12 +343,16 @@ namespace KursovaHomeGarden.Controllers
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error updating plant: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 ViewBag.Message = $"Error: {ex.Message}";
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
                 return View(plant);
             }
         }
+
+
 
         private List<SelectListItem> GetCategories()
         {

@@ -5,6 +5,8 @@
         <h2 class="text-center mb-5">Edit Plant</h2>
 
         <form method="post" enctype="multipart/form-data" id="plant-form">
+            <input type="hidden" asp-for="plant_id" />
+
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Plant Name</label>
                 <div class="col-sm-8">
@@ -19,17 +21,13 @@
                     <textarea class="form-control" asp-for="description"></textarea>
                     <span asp-validation-for="description" class="text-danger"></span>
                 </div>
-            </div>
-
-            <div class="row mb-3">
+            </div>            <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Price</label>
                 <div class="col-sm-8">
                     <input class="form-control" asp-for="price" />
                     <span asp-validation-for="price" class="text-danger"></span>
                 </div>
-            </div>
-
-            <div class="row mb-3">
+            </div>            <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Category</label>
                 <div class="col-sm-8">
                     <select class="form-control" asp-for="category_id" asp-items="ViewBag.Categories"></select>
@@ -48,14 +46,17 @@
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Current Image</label>
                 <div class="col-sm-8">
-                    <img src="/images/plants/@Model.img" width="150" />
+                    @if (!string.IsNullOrEmpty(Model.img))
+                    {
+                        <img src="/images/plants/@Model.img" width="150" alt="Current plant image" />
+                    }
                 </div>
             </div>
 
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">New Image</label>
                 <div class="col-sm-8">
-                    <input type="file" class="form-control" asp-for="img" />
+                    <input type="file" class="form-control" name="img" />
                     <span asp-validation-for="img" class="text-danger"></span>
                 </div>
             </div>
@@ -71,6 +72,7 @@
         </form>
     </div>
 </div>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {

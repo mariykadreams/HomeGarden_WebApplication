@@ -29,7 +29,8 @@
                 <td>@plant.name</td>
                 <td>@plant.description</td>
                 <td>@plant.price</td>
-
+                <td>@plant.Category?.category_name</td>
+                <td>@plant.CareLevel?.level_name</td>
                 <td>
                     <img src="/images/plants/@plant.img" width="100" alt="Plant Image" />
                 </td>
@@ -38,6 +39,7 @@
                     <a class="btn btn-sm btn-danger" onclick="confirmDelete('@plant.plant_id')" href="javascript:void(0);">Delete</a>
                 </td>
             </tr>
+
         }
     </tbody>
 </table>

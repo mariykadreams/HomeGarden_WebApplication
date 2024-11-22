@@ -1,4 +1,5 @@
 ﻿using KursovaHomeGarden.Areas.Identity.Data;
+using KursovaHomeGarden.Models;
 using KursovaHomeGarden.Models.CareLevel;
 using KursovaHomeGarden.Models.Category;
 using KursovaHomeGarden.Models.Plant;
@@ -18,6 +19,12 @@ public class HomeGardenDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Category> Categories { get; set; }
     public DbSet<Plant> Plants { get; set; }
     public DbSet<CareLevel> CareLevels { get; set; }
+    public DbSet<Fertilize> Fertilizes { get; set; }
+    public DbSet<ActionFrequency> ActionFrequencies { get; set; }
+    public DbSet<Season> Seasons { get; set; }
+    public DbSet<SunlightRequirement> SunlightRequirements { get; set; }
+    public DbSet<ActionType> ActionTypes { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

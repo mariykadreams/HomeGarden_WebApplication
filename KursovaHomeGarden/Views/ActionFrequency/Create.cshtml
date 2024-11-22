@@ -1,0 +1,63 @@
+﻿@* Views/ActionFrequency/Create.cshtml *@
+@model KursovaHomeGarden.Models.ActionFrequency
+
+<h2>Create Action Frequency</h2>
+
+<form asp-action="Create" method="post">
+
+    <div class="form-group">
+        <label asp-for="volume" class="control-label">Volume</label>
+        <input asp-for="volume" class="form-control" />
+        <span asp-validation-for="volume" class="text-danger"></span>
+    </div>
+
+
+    <div class="form-group">
+        <label asp-for="volume" class="control-label">Volume</label>
+        <input asp-for="volume" class="form-control" />
+        <span asp-validation-for="volume" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="plant_id" class="control-label">Plant</label>
+        <select asp-for="plant_id" class="form-control" asp-items="ViewBag.Plants">
+            <option value="">Select Plant</option>
+        </select>
+        <span asp-validation-for="plant_id" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="season_id" class="control-label">Season</label>
+        <select asp-for="season_id" class="form-control" asp-items="ViewBag.Seasons">
+            <option value="">Select Season</option>
+        </select>
+        <span asp-validation-for="season_id" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="action_type_id" class="control-label">Action Type</label>
+        <select asp-for="action_type_id" class="form-control" asp-items="ViewBag.ActionTypes">
+            <option value="">Select Action Type</option>
+        </select>
+        <span asp-validation-for="action_type_id" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Fert_type_id" class="control-label">Fertilize Type</label>
+        <select asp-for="Fert_type_id" class="form-control" asp-items="ViewBag.Fertilizes">
+            <option value="">Select Fertilize Type</option>
+        </select>
+        <span asp-validation-for="Fert_type_id" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <input type="submit" value="Create" class="btn btn-primary" />
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

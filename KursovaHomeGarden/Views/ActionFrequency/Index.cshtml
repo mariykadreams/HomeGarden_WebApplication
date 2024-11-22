@@ -1,0 +1,39 @@
+﻿
+@model IEnumerable<KursovaHomeGarden.Models.ActionFrequency>
+
+<h1>Action Frequencies</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Interval</th>
+            <th>Volume</th>
+            <th>Plant</th>
+            <th>Season ID</th>
+            <th>Action Type ID</th>
+            <th>Fertilize Type ID</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Interval</td>
+                <td>@item.volume</td>
+                <td>@item.Plant?.name</td>
+                <td>@item.season_id</td>
+                <td>@item.action_type_id</td>
+                <td>@item.Fert_type_id</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Action_frequency_id">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Action_frequency_id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

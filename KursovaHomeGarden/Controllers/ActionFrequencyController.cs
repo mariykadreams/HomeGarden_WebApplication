@@ -5,6 +5,7 @@ using KursovaHomeGarden.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using KursovaHomeGarden.Models.Plant;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -19,13 +20,16 @@ namespace KursovaHomeGarden.Controllers
             _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
         }
 
-        
+
         public IActionResult Index()
         {
             var actionFrequencies = new List<ActionFrequency>();
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                using (SqlCommand command = new SqlCommand("SELECT * FROM ActionFrequencies", connection))
+                string query = @"SELECT af.*, p.name as plant_name 
+                        FROM ActionFrequencies af 
+                        LEFT JOIN Plants p ON af.plant_id = p.plant_id";
+                using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     connection.Open();
                     using (SqlDataReader reader = command.ExecuteReader())
@@ -35,8 +39,10 @@ namespace KursovaHomeGarden.Controllers
                             actionFrequencies.Add(new ActionFrequency
                             {
                                 Action_frequency_id = reader.GetInt32("Action_frequency_id"),
+                                Interval = reader.GetString("Interval"),
                                 volume = reader.GetDecimal("volume"),
                                 plant_id = reader.GetInt32("plant_id"),
+                                Plant = new Plant { name = reader.GetString("plant_name") },
                                 season_id = reader.GetInt32("season_id"),
                                 action_type_id = reader.GetInt32("action_type_id"),
                                 Fert_type_id = reader.IsDBNull("Fert_type_id") ? null : reader.GetInt32("Fert_type_id")
@@ -48,7 +54,8 @@ namespace KursovaHomeGarden.Controllers
             return View(actionFrequencies);
         }
 
-       
+
+
         public IActionResult Create()
         {
             ViewBag.Plants = GetPlants();
@@ -64,11 +71,14 @@ namespace KursovaHomeGarden.Controllers
             {
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    string query = @"INSERT INTO ActionFrequencies (volume, plant_id, season_id, action_type_id, Fert_type_id) 
-                               VALUES (@volume, @plant_id, @season_id, @action_type_id, @Fert_type_id)";
+                    string query = @"INSERT INTO ActionFrequencies 
+                           (Interval, volume, plant_id, season_id, action_type_id, Fert_type_id) 
+                           VALUES 
+                           (@Interval, @volume, @plant_id, @season_id, @action_type_id, @Fert_type_id)";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
+                        command.Parameters.AddWithValue("@Interval", actionFrequency.Interval);
                         command.Parameters.AddWithValue("@volume", actionFrequency.volume);
                         command.Parameters.AddWithValue("@plant_id", actionFrequency.plant_id);
                         command.Parameters.AddWithValue("@season_id", actionFrequency.season_id);
@@ -88,6 +98,8 @@ namespace KursovaHomeGarden.Controllers
        
         public IActionResult Edit(int id)
         {
+            ViewBag.Plants = GetPlants();
+
             ActionFrequency actionFrequency = null;
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {

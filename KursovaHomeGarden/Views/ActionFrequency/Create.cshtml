@@ -4,7 +4,11 @@
 <h2>Create Action Frequency</h2>
 
 <form asp-action="Create" method="post">
-
+    <div class="form-group">
+        <label asp-for="Interval" class="control-label">Interval</label>
+        <input asp-for="Interval" class="form-control" />
+        <span asp-validation-for="Interval" class="text-danger"></span>
+    </div>
     <div class="form-group">
         <label asp-for="volume" class="control-label">Volume</label>
         <input asp-for="volume" class="form-control" />

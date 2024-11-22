@@ -1,0 +1,57 @@
+﻿@model KursovaHomeGarden.Models.Plant.Plant
+
+<div class="card shadow border-0 mt-4">
+    <div class="card-header bg-secondary bg-gradient text-light py-4">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h3 class="text-white text-uppercase">@Model.name</h3>
+                <p class="text-white-50 fw-semibold mb-0">Category: @Model.Category.category_name</p>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="py-3">
+            <div class="row">
+                <div class="col-6 col-md-2 offset-lg-1 pb-1">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-outline-primary bg-gradient mb-5 fw-semibold btn-sm text-uppercase">
+                        <small>Back to All Plants</small>
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-lg-3 offset-lg-1 text-center mb-3">
+                    <img src="/images/plants/@Model.img" alt="@Model.name" style="width: 100%; height: 300px; object-fit: cover; border-radius: 8px;" />
+                </div>
+                <div class="col-12 col-lg-6 offset-lg-1">
+                    <div class="col-12 col-md-6 pb-4">
+                        <span class="badge bg-primary text-uppercase">@Model.Category.category_name</span>
+                    </div>
+                    <div class="row ps-2">
+                        <h6 class="text-dark text-opacity-50 pb-2">
+                            Price:
+                            <span class="text-warning fw-bold">@Model.price.ToString("c")</span>
+                        </h6>
+                    </div>
+                    <div class="row pl-2 my-3">
+                        <p class="text-secondary lh-sm">@Model.description</p>
+                    </div>
+
+                    <div class="row">
+         
+                        <div class="col-12 pb-4">
+                            <span class="badge bg-info text-uppercase">Care Level: @Model.CareLevel.level_name</span>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12 col-md-6 pb-1">
+                            <button type="button" disabled class="btn btn-primary bg-gradient w-100 py-2 text-uppercase fw-semibold">
+                                Add to My Plant (Coming Soon...)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

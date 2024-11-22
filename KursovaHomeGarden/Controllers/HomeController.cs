@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using KursovaHomeGarden.Data;
 
 
 namespace KursovaHomeGarden.Controllers
@@ -14,11 +16,13 @@ namespace KursovaHomeGarden.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly string _connectionString;
+        private readonly HomeGardenDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
+        public HomeController(ILogger<HomeController> logger, IConfiguration configuration, HomeGardenDbContext context)
         {
             _logger = logger;
             _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
+            _context = context;
         }
 
         public IActionResult Index()
@@ -95,6 +99,22 @@ namespace KursovaHomeGarden.Controllers
         {
             return View();
         }
+
+        public IActionResult Details(int id)
+        {
+            var plant = _context.Plants
+                .Include(p => p.Category)  // Include the related Category
+                .Include(p => p.CareLevel)  // Include the related CareLevel
+                .FirstOrDefault(p => p.plant_id == id);  // Fetch the plant by ID
+
+            if (plant == null)
+            {
+                return NotFound();  // Return 404 if the plant is not found
+            }
+
+            return View(plant);  // Return the plant to the Details view
+        }
+
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()

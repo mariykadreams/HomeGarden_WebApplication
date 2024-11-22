@@ -191,9 +191,6 @@ namespace KursovaHomeGarden.Controllers
             }
         }
 
-
-
-
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -239,7 +236,6 @@ namespace KursovaHomeGarden.Controllers
                 return RedirectToAction("Index");
             }
         }
-
 
         [HttpPost]
         public IActionResult Edit(Plant plant)
@@ -352,8 +348,6 @@ namespace KursovaHomeGarden.Controllers
             }
         }
 
-
-
         private List<SelectListItem> GetCategories()
         {
             List<SelectListItem> categories = new List<SelectListItem>();
@@ -376,7 +370,6 @@ namespace KursovaHomeGarden.Controllers
             }
             return categories;
         }
-
 
         private List<SelectListItem> GetCareLevels()
         {

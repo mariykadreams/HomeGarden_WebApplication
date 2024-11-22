@@ -22,13 +22,11 @@ namespace KursovaHomeGarden.Models.Plant
         [Column(TypeName = "decimal(18,2)")]
         public decimal price { get; set; }
 
-        // Remove any validation from img since it's optional
         public string? img { get; set; }
 
         [Required]
         public int category_id { get; set; }
 
-        // Remove [Required] from navigation properties
         public Category.Category? Category { get; set; }
 
         [Required]

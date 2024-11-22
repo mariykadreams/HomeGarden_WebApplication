@@ -157,14 +157,34 @@ public class CategoryController : Controller
     }
 
     [HttpPost]
+    [HttpPost]
     public IActionResult Delete(int id)
     {
         try
         {
+            // Проверка на наличие связанных записей в таблице Plants
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                const string query = "DELETE FROM Categories WHERE category_id = @categoryId";
-                using (SqlCommand command = new SqlCommand(query, connection))
+                const string checkQuery = "SELECT COUNT(*) FROM Plants WHERE category_id = @categoryId";
+                using (SqlCommand command = new SqlCommand(checkQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@categoryId", id);
+                    connection.Open();
+                    int count = (int)command.ExecuteScalar();
+
+                    // Если есть связанные записи, нельзя удалить категорию
+                    if (count > 0)
+                    {
+                        return Json(new { success = false, message = "This category cannot be deleted because it is linked to other records." });
+                    }
+                }
+            }
+
+            // Если связанных записей нет, удаляем категорию
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                const string deleteQuery = "DELETE FROM Categories WHERE category_id = @categoryId";
+                using (SqlCommand command = new SqlCommand(deleteQuery, connection))
                 {
                     command.Parameters.AddWithValue("@categoryId", id);
                     connection.Open();
@@ -176,11 +196,12 @@ public class CategoryController : Controller
         }
         catch (SqlException ex)
         {
-            return Json(new { success = false, message = "This category cannot be deleted because it is linked to other records." });
+            return Json(new { success = false, message = $"SQL Error: {ex.Message}" });
         }
         catch (Exception ex)
         {
             return Json(new { success = false, message = $"Error: {ex.Message}" });
         }
     }
+
 }

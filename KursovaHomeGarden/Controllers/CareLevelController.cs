@@ -168,26 +168,50 @@ namespace KursovaHomeGarden.Controllers
         {
             try
             {
+                // Шаг 1: Проверка наличия связанных записей в таблице Plants
+                int count;
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    const string query = "DELETE FROM CareLevels WHERE care_level_id = @careLevelId";
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    const string checkQuery = "SELECT COUNT(*) FROM Plants WHERE care_level_id = @careLevelId";
+                    using (SqlCommand command = new SqlCommand(checkQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@careLevelId", id);
+                        connection.Open();
+                        count = (int)command.ExecuteScalar();
+                    }
+                }
+
+                // Шаг 2: Если есть связанные записи, то запрещаем удаление
+                if (count > 0)
+                {
+                    return Json(new { success = false, message = "This care level is linked to other records and cannot be deleted." });
+                }
+
+                // Шаг 3: Удаление записи из таблицы CareLevels
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    const string deleteQuery = "DELETE FROM CareLevels WHERE care_level_id = @careLevelId";
+                    using (SqlCommand command = new SqlCommand(deleteQuery, connection))
                     {
                         command.Parameters.AddWithValue("@careLevelId", id);
                         connection.Open();
                         command.ExecuteNonQuery();
                     }
                 }
+
                 return Json(new { success = true });
             }
             catch (SqlException ex) when (ex.Number == 547)
             {
+                // Если произошла ошибка внешнего ключа
                 return Json(new { success = false, message = "This care level is linked to other records and cannot be deleted." });
             }
             catch (Exception ex)
             {
+                // Обработка других ошибок
                 return Json(new { success = false, message = $"Error deleting care level: {ex.Message}" });
             }
         }
+
     }
 }

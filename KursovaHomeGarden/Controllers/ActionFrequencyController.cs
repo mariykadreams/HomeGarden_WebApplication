@@ -59,15 +59,37 @@ namespace KursovaHomeGarden.Controllers
         public IActionResult Create()
         {
             ViewBag.Plants = GetPlants();
+            ViewBag.Seasons = GetSeasons();
+            ViewBag.ActionTypes = GetActionTypes();
             return View();
         }
 
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(ActionFrequency actionFrequency)
         {
-            if (ModelState.IsValid)
+            // Add validation checks similar to PlantController
+            if (string.IsNullOrWhiteSpace(actionFrequency.Interval))
+            {
+                ModelState.AddModelError("Interval", "Interval is required.");
+            }
+
+            if (actionFrequency.volume <= 0)
+            {
+                ModelState.AddModelError("volume", "Volume must be greater than 0.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Repopulate ViewBag data before returning to view
+                ViewBag.Plants = GetPlants();
+                ViewBag.Seasons = GetSeasons();
+                ViewBag.ActionTypes = GetActionTypes();
+                return View(actionFrequency);
+            }
+
+            try
             {
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
@@ -92,10 +114,21 @@ namespace KursovaHomeGarden.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(actionFrequency);
+            catch (Exception ex)
+            {
+                // Log error
+                System.Diagnostics.Debug.WriteLine($"Error creating action frequency: {ex.Message}");
+                ViewBag.Message = $"Error: {ex.Message}";
+                // Repopulate ViewBag data
+                ViewBag.Plants = GetPlants();
+                ViewBag.Seasons = GetSeasons();
+                ViewBag.ActionTypes = GetActionTypes();
+                return View(actionFrequency);
+            }
         }
 
-       
+
+
         public IActionResult Edit(int id)
         {
             ViewBag.Plants = GetPlants();
@@ -169,6 +202,10 @@ namespace KursovaHomeGarden.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewBag.Plants = GetPlants();
+            ViewBag.Seasons = GetSeasons();
+            ViewBag.ActionTypes = GetActionTypes();
             return View(actionFrequency);
         }
 
@@ -248,6 +285,53 @@ namespace KursovaHomeGarden.Controllers
             }
             return plants;
         }
+
+        private List<SelectListItem> GetSeasons()
+        {
+            List<SelectListItem> seasons = new List<SelectListItem>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "SELECT season_id, season_name FROM Seasons";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        seasons.Add(new SelectListItem
+                        {
+                            Value = reader["season_id"].ToString(),
+                            Text = $"{reader["season_name"]}"
+                        });
+                    }
+                }
+            }
+            return seasons;
+        }
+
+        private List<SelectListItem> GetActionTypes()
+        {
+            List<SelectListItem> actionTypes = new List<SelectListItem>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = "SELECT action_type_id, type_name FROM ActionTypes";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        actionTypes.Add(new SelectListItem
+                        {
+                            Value = reader["action_type_id"].ToString(),
+                            Text = reader["type_name"].ToString()
+                        });
+                    }
+                }
+            }
+            return actionTypes;
+        }
+
     }
 
 }

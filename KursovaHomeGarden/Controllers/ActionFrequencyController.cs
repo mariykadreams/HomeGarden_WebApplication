@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using KursovaHomeGarden.Models.Plant;
+using static Azure.Core.HttpHeader;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -41,12 +42,14 @@ namespace KursovaHomeGarden.Controllers
                                 Action_frequency_id = reader.GetInt32("Action_frequency_id"),
                                 Interval = reader.GetString("Interval"),
                                 volume = reader.GetDecimal("volume"),
+                                notes = reader.IsDBNull("notes") ? null : reader.GetString("notes"),
                                 plant_id = reader.GetInt32("plant_id"),
                                 Plant = new Plant { name = reader.GetString("plant_name") },
                                 season_id = reader.GetInt32("season_id"),
                                 action_type_id = reader.GetInt32("action_type_id"),
                                 Fert_type_id = reader.IsDBNull("Fert_type_id") ? null : reader.GetInt32("Fert_type_id")
                             });
+
                         }
                     }
                 }
@@ -80,7 +83,7 @@ namespace KursovaHomeGarden.Controllers
                 {
                     foreach (var error in modelStateEntry.Errors)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Validation error: {error.ErrorMessage}");
+                    System.Diagnostics.Debug.WriteLine($"Validation error: {error.ErrorMessage}");
                     }
                 }
             }
@@ -109,14 +112,15 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     string query = @"INSERT INTO ActionFrequencies 
-                           (Interval, volume, plant_id, season_id, action_type_id, Fert_type_id) 
+                           (Interval, volume,notes, plant_id, season_id, action_type_id, Fert_type_id) 
                            VALUES 
-                           (@Interval, @volume, @plant_id, @season_id, @action_type_id, @Fert_type_id)";
+                           (@Interval, @volume, @notes, @plant_id, @season_id, @action_type_id, @Fert_type_id)";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@Interval", actionFrequency.Interval);
                         command.Parameters.AddWithValue("@volume", actionFrequency.volume);
+                        command.Parameters.AddWithValue("@notes", (object)actionFrequency.notes ?? DBNull.Value);
                         command.Parameters.AddWithValue("@plant_id", actionFrequency.plant_id);
                         command.Parameters.AddWithValue("@season_id", actionFrequency.season_id);
                         command.Parameters.AddWithValue("@action_type_id", actionFrequency.action_type_id);
@@ -131,10 +135,8 @@ namespace KursovaHomeGarden.Controllers
             }
             catch (Exception ex)
             {
-                // Log error
                 System.Diagnostics.Debug.WriteLine($"Error creating action frequency: {ex.Message}");
                 ViewBag.Message = $"Error: {ex.Message}";
-                // Repopulate ViewBag data
                 ViewBag.Plants = GetPlants();
                 ViewBag.Seasons = GetSeasons();
                 ViewBag.ActionTypes = GetActionTypes();
@@ -143,10 +145,19 @@ namespace KursovaHomeGarden.Controllers
         }
 
 
-
+         public IActionResult Edit()
+        {
+            ViewBag.Plants = GetPlants();
+            ViewBag.Seasons = GetSeasons();
+            ViewBag.ActionTypes = GetActionTypes();
+            return View();
+        }
         public IActionResult Edit(int id)
         {
             ViewBag.Plants = GetPlants();
+            ViewBag.Seasons = GetSeasons();
+            ViewBag.ActionTypes = GetActionTypes();
+            
 
             ActionFrequency actionFrequency = null;
             using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -172,10 +183,12 @@ namespace KursovaHomeGarden.Controllers
                     }
                 }
             }
+
             if (actionFrequency == null)
             {
                 return NotFound();
             }
+
             return View(actionFrequency);
         }
 
@@ -194,17 +207,19 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     string query = @"UPDATE ActionFrequencies 
-                               SET volume = @volume, 
-                                   plant_id = @plant_id, 
-                                   season_id = @season_id, 
-                                   action_type_id = @action_type_id, 
-                                   Fert_type_id = @Fert_type_id 
-                               WHERE Action_frequency_id = @id";
+                                    SET volume = @volume, 
+                                        notes = @notes, 
+                                        plant_id = @plant_id, 
+                                        season_id = @season_id, 
+                                        action_type_id = @action_type_id, 
+                                        Fert_type_id = @Fert_type_id 
+                                    WHERE Action_frequency_id = @id";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@id", id);
                         command.Parameters.AddWithValue("@volume", actionFrequency.volume);
+                        command.Parameters.AddWithValue("@notes", (object)actionFrequency.notes ?? DBNull.Value);
                         command.Parameters.AddWithValue("@plant_id", actionFrequency.plant_id);
                         command.Parameters.AddWithValue("@season_id", actionFrequency.season_id);
                         command.Parameters.AddWithValue("@action_type_id", actionFrequency.action_type_id);

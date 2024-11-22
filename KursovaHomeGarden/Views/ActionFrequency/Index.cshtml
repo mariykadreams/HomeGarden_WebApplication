@@ -1,39 +1,55 @@
-﻿
-@model IEnumerable<KursovaHomeGarden.Models.ActionFrequency>
+﻿@model IEnumerable<KursovaHomeGarden.Models.ActionFrequency>
 
-<h1>Action Frequencies</h1>
+<div class="row">
+    <div class="col-md-10 mx-auto rounded border p-3">
+        <h2 class="text-center mb-4">Action Frequencies</h2>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+        <div class="d-flex justify-content-between mb-3">
+            <p class="m-0">Manage action frequencies associated with plants and care routines.</p>
+            <a class="btn btn-primary" asp-action="Create">Create New</a>
+        </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Interval</th>
-            <th>Volume</th>
-            <th>Plant</th>
-            <th>Season ID</th>
-            <th>Action Type ID</th>
-            <th>Fertilize Type ID</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Interval</td>
-                <td>@item.volume</td>
-                <td>@item.Plant?.name</td>
-                <td>@item.season_id</td>
-                <td>@item.action_type_id</td>
-                <td>@item.Fert_type_id</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Action_frequency_id">Edit</a> |
-                    <a asp-action="Delete" asp-route-id="@item.Action_frequency_id">Delete</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+        <table class="table table-bordered table-striped">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>Interval</th>
+                    <th>Volume</th>
+                    <th>Notes</th>
+                    <th>Plant</th>
+                    <th>Season</th>
+                    <th>Action Type</th>
+                    <th>Fertilize Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-center">@item.Interval</td>
+                        <td class="text-center">@item.volume</td>
+                        <td class="text-center" title="@item.notes">
+                            @(string.IsNullOrEmpty(item.notes)
+                                ? "-"
+                                : (item.notes.Length > 50
+                                ? item.notes.Substring(0, 50) + "..."
+                                : item.notes))
+                        </td>
+
+                        <td class="text-center">@item.Plant?.name</td>
+                        <td class="text-center">@item.season_id</td>
+                        <td class="text-center">@item.action_type_id</td>
+                        <td class="text-center">
+                            @(item.Fert_type_id.HasValue ? item.Fert_type_id.ToString() : "-")
+                        </td>
+
+                        <td class="text-center">
+                            <a class="btn btn-sm btn-primary me-2" asp-action="Edit" asp-route-id="@item.Action_frequency_id">Edit</a>
+                            <a class="btn btn-sm btn-danger" asp-action="Delete" asp-route-id="@item.Action_frequency_id">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

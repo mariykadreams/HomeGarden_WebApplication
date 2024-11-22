@@ -1,57 +1,96 @@
 ﻿@* Views/ActionFrequency/Edit.cshtml *@
 @model KursovaHomeGarden.Models.ActionFrequency
 
-<h2>Edit Action Frequency</h2>
+<div class="row">
+    <div class="col-md-8 mx-auto rounded border p-3">
+        <h2 class="text-center mb-4">Edit Action Frequency</h2>
 
-<form asp-action="Edit" method="post">
-    <input type="hidden" asp-for="Action_frequency_id" />
+        <form asp-action="Edit" method="post" id="action-frequency-edit-form">
+            <input type="hidden" asp-for="Action_frequency_id" />
 
-    <div class="form-group">
-        <label asp-for="volume" class="control-label">Volume</label>
-        <input asp-for="volume" class="form-control" />
-        <span asp-validation-for="volume" class="text-danger"></span>
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Volume</label>
+                <div class="col-sm-8">
+                    <input class="form-control" asp-for="volume" />
+                    <span asp-validation-for="volume" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Plant</label>
+                <div class="col-sm-8">
+                    <select class="form-control" asp-for="plant_id" asp-items="ViewBag.Plants"></select>
+                    <span asp-validation-for="plant_id" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Season</label>
+                <div class="col-sm-8">
+                    <select class="form-control" asp-for="season_id" asp-items="ViewBag.Seasons"></select>
+                    <span asp-validation-for="season_id" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Action Type</label>
+                <div class="col-sm-8">
+                    <select class="form-control" asp-for="action_type_id" asp-items="ViewBag.ActionTypes"></select>
+                    <span asp-validation-for="action_type_id" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Fertilize Type</label>
+                <div class="col-sm-8">
+                    <select class="form-control" asp-for="Fert_type_id" asp-items="ViewBag.Fertilizes"></select>
+                    <span asp-validation-for="Fert_type_id" class="text-danger"></span>
+                </div>
+            </div>
+            <!-- Add this inside the form, before the buttons -->
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Notes</label>
+                <div class="col-sm-8">
+                    <textarea class="form-control" asp-for="notes" rows="3"></textarea>
+                    <span asp-validation-for="notes" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="offset-sm-4 col-sm-4 d-grid">
+                    <button type="submit" class="btn btn-primary" id="save-button">Save</button>
+                </div>
+                <div class="col-sm-4 d-grid">
+                    <a asp-action="Index" class="btn btn-outline-secondary" id="cancel-edit-button" role="button">Cancel</a>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div class="form-group">
-        <label asp-for="plant_id" class="control-label">Plant</label>
-        <select asp-for="plant_id" class="form-control" asp-items="ViewBag.Plants">
-            <option value="">Select Plant</option>
-        </select>
-        <span asp-validation-for="plant_id" class="text-danger"></span>
-    </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let cancelButton = document.getElementById("cancel-edit-button");
 
-    <div class="form-group">
-        <label asp-for="season_id" class="control-label">Season</label>
-        <select asp-for="season_id" class="form-control" asp-items="ViewBag.Seasons">
-            <option value="">Select Season</option>
-        </select>
-        <span asp-validation-for="season_id" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="action_type_id" class="control-label">Action Type</label>
-        <select asp-for="action_type_id" class="form-control" asp-items="ViewBag.ActionTypes">
-            <option value="">Select Action Type</option>
-        </select>
-        <span asp-validation-for="action_type_id" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="Fert_type_id" class="control-label">Fertilize Type</label>
-        <select asp-for="Fert_type_id" class="form-control" asp-items="ViewBag.Fertilizes">
-            <option value="">Select Fertilize Type</option>
-        </select>
-        <span asp-validation-for="Fert_type_id" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <input type="submit" value="Save" class="btn btn-primary" />
-        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-    </div>
-</form>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
+        cancelButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: "Discard Changes?",
+                text: "Any unsaved changes will be lost.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, discard",
+                cancelButtonText: "No, stay",
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '@Url.Action("Index", "ActionFrequency")';
+                }
+            });
+        });
+    });
+</script>

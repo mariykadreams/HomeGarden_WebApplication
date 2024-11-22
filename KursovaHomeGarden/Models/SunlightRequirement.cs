@@ -14,5 +14,8 @@ namespace KursovaHomeGarden.Models
         public int hours_per_day { get; set; }
 
         public string? notes { get; set; }
+
+        public int plant_id { get; set; }
+        public Plant.Plant Plant { get; set; }
     }
 }

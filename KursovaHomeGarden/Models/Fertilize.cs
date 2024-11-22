@@ -16,7 +16,7 @@ namespace KursovaHomeGarden.Models
 
         public string? note { get; set; }
 
-        public int Action_frequency_id { get; set; }
-        public ActionFrequency? ActionFrequency { get; set; }
+        public ICollection<ActionFrequency> ActionFrequencies { get; set; }
+
     }
 }

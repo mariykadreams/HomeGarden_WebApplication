@@ -4,6 +4,7 @@ using KursovaHomeGarden.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KursovaHomeGarden.Migrations
 {
     [DbContext(typeof(HomeGardenDbContext))]
-    partial class HomeGardenDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241122152833_AddTablesNew")]
+    partial class AddTablesNew
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -131,7 +134,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasIndex("season_id");
 
-                    b.ToTable("ActionFrequencies", (string)null);
+                    b.ToTable("ActionFrequencies");
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.ActionType", b =>
@@ -148,7 +151,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasKey("action_type_id");
 
-                    b.ToTable("ActionTypes", (string)null);
+                    b.ToTable("ActionTypes");
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.CareLevel.CareLevel", b =>
@@ -165,7 +168,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasKey("care_level_id");
 
-                    b.ToTable("CareLevels", (string)null);
+                    b.ToTable("CareLevels");
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.Category.Category", b =>
@@ -182,7 +185,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasKey("category_id");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.Fertilize", b =>
@@ -214,7 +217,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasIndex("ActionFrequencyAction_frequency_id");
 
-                    b.ToTable("Fertilizes", (string)null);
+                    b.ToTable("Fertilizes");
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.Plant.Plant", b =>
@@ -254,7 +257,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasIndex("category_id");
 
-                    b.ToTable("Plants", (string)null);
+                    b.ToTable("Plants");
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.Season", b =>
@@ -285,7 +288,7 @@ namespace KursovaHomeGarden.Migrations
 
                     b.HasKey("season_id");
 
-                    b.ToTable("Seasons", (string)null);
+                    b.ToTable("Seasons");
                 });
 
             modelBuilder.Entity("KursovaHomeGarden.Models.SunlightRequirement", b =>
@@ -314,7 +317,7 @@ namespace KursovaHomeGarden.Migrations
                     b.HasIndex("plant_id")
                         .IsUnique();
 
-                    b.ToTable("SunlightRequirements", (string)null);
+                    b.ToTable("SunlightRequirements");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

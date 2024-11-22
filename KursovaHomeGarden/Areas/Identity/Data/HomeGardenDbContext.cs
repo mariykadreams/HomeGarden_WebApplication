@@ -44,5 +44,44 @@ public class HomeGardenDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(p => p.CareLevel)
             .WithMany()
             .HasForeignKey(p => p.care_level_id);
+
+        builder.Entity<ActionFrequency>()
+           .HasOne(af => af.Plant)
+           .WithMany(p => p.ActionFrequencies)
+           .HasForeignKey(af => af.plant_id)
+           .IsRequired();
+
+        builder.Entity<ActionFrequency>()
+            .HasOne(af => af.Season)
+            .WithMany()
+            .HasForeignKey(af => af.season_id)
+            .IsRequired();
+
+        builder.Entity<ActionFrequency>()
+            .HasOne(af => af.ActionType)
+            .WithMany()
+            .HasForeignKey(af => af.action_type_id)
+            .IsRequired();
+
+  
+
+
+
+        builder.Entity<Plant>()
+        .HasOne(p => p.SunlightRequirement)
+        .WithOne(sr => sr.Plant)
+        .HasForeignKey<SunlightRequirement>(sr => sr.plant_id);
+
+        builder.Entity<ActionFrequency>()
+        .Property(af => af.volume)
+        .HasPrecision(10, 2); 
+
+        builder.Entity<Season>()
+            .Property(s => s.temperature_range_max)
+            .HasPrecision(5, 2);
+
+        builder.Entity<Season>()
+            .Property(s => s.temperature_range_min)
+            .HasPrecision(5, 2);
     }
 }

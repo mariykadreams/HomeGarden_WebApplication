@@ -34,11 +34,10 @@ namespace KursovaHomeGarden.Models.Plant
 
         public CareLevel.CareLevel? CareLevel { get; set; }
 
-        public int? sunlight_requirements_id { get; set; }
         public SunlightRequirement? SunlightRequirement { get; set; }
 
-        public ICollection<Season>? Seasons { get; set; }
+        public ICollection<ActionFrequency>? ActionFrequencies { get; set; }
     }
-
-
 }
+
+

@@ -29,71 +29,51 @@ namespace KursovaHomeGarden.Controllers
         {
             List<Plant> plants = new List<Plant>();
 
-            try
+            using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                using (SqlConnection connection = new SqlConnection(_connectionString))
+                string query = @"
+            SELECT 
+                p.plant_id, p.name, p.description, p.price, p.img, 
+                p.category_id, c.category_name 
+            FROM Plants p
+            LEFT JOIN Categories c ON p.category_id = c.category_id";
+
+                SqlCommand command = new SqlCommand(query, connection);
+
+                try
                 {
-                    string query = @"
-                        SELECT p.plant_id, 
-                               p.name, 
-                               p.description, 
-                               p.price, 
-                               p.img,
-                               c.category_id,
-                               c.category_name,
-                               cl.care_level_id,
-                               cl.level_name
-                        FROM Plants p
-                        JOIN Categories c ON p.category_id = c.category_id
-                        JOIN CareLevels cl ON p.care_level_id = cl.care_level_id";
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
 
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    while (reader.Read())
                     {
-                        connection.Open();
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        var plant = new Plant
                         {
-                            while (reader.Read())
+                            plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                            name = reader.GetString(reader.GetOrdinal("name")),
+                            description = reader["description"] as string,
+                            price = reader.GetDecimal(reader.GetOrdinal("price")),
+                            img = reader["img"] as string,
+                            Category = new Category
                             {
-                                plants.Add(new Plant
-                                {
-                                    plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
-                                    name = reader.GetString(reader.GetOrdinal("name")),
-                                    description = reader.IsDBNull(reader.GetOrdinal("description"))
-                                        ? null
-                                        : reader.GetString(reader.GetOrdinal("description")),
-                                    price = reader.GetDecimal(reader.GetOrdinal("price")),
-                                    img = reader.IsDBNull(reader.GetOrdinal("img"))
-                                        ? null
-                                        : reader.GetString(reader.GetOrdinal("img")),
-
-
-                                    Category = new KursovaHomeGarden.Models.Category.Category
-                                    {
-                                        category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
-                                        category_name = reader.GetString(reader.GetOrdinal("category_name"))
-                                    },
-
-
-
-                                    CareLevel = new KursovaHomeGarden.Models.CareLevel.CareLevel
-                                    {
-                                        care_level_id = reader.GetInt32(reader.GetOrdinal("care_level_id")),
-                                        level_name = reader.GetString(reader.GetOrdinal("level_name"))
-                                    }
-                                });
+                                category_name = reader["category_name"] as string
                             }
-                        }
+                        };
+
+                        plants.Add(plant);
                     }
+
+                    reader.Close();
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error retrieving plants: {ex.Message}");
-                // You might want to handle the error appropriately
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error fetching plants: {0}", ex.Message);
+                }
             }
 
             return View(plants);
         }
+
 
         public IActionResult Privacy()
         {
@@ -102,16 +82,82 @@ namespace KursovaHomeGarden.Controllers
 
         public IActionResult Details(int id)
         {
-            var plant = _context.Plants
-                .Include(p => p.Category)
-                .Include(p => p.CareLevel)
-                .Include(p => p.ActionFrequencies)
-                    .ThenInclude(af => af.Season)
-                .Include(p => p.ActionFrequencies)
-                    .ThenInclude(af => af.ActionType)
-                .Include(p => p.ActionFrequencies)
-                    .ThenInclude(af => af.Fertilize)
-                .FirstOrDefault(p => p.plant_id == id);
+            Plant plant = null;
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+            SELECT 
+                p.plant_id, p.name, p.description, p.price, p.img, 
+                c.category_name, 
+                cl.level_name AS care_level_name,
+                af.Interval, af.volume, af.notes,
+                s.season_name, at.type_name AS action_type_name
+            FROM Plants p
+            LEFT JOIN Categories c ON p.category_id = c.category_id
+            LEFT JOIN CareLevels cl ON p.care_level_id = cl.care_level_id
+            LEFT JOIN ActionFrequencies af ON p.plant_id = af.plant_id
+            LEFT JOIN Seasons s ON af.season_id = s.season_id
+            LEFT JOIN ActionTypes at ON af.action_type_id = at.action_type_id
+            WHERE p.plant_id = @id";
+
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@id", id);
+
+                try
+                {
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        if (plant == null)
+                        {
+                            plant = new Plant
+                            {
+                                plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                                name = reader.GetString(reader.GetOrdinal("name")),
+                                description = reader["description"] as string,
+                                price = reader.GetDecimal(reader.GetOrdinal("price")),
+                                img = reader["img"] as string,
+                                Category = new Category
+                                {
+                                    category_name = reader["category_name"] as string
+                                },
+                                CareLevel = new CareLevel
+                                {
+                                    level_name = reader["care_level_name"] as string
+                                },
+                                ActionFrequencies = new List<ActionFrequency>()
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("Interval")))
+                        {
+                            plant.ActionFrequencies.Add(new ActionFrequency
+                            {
+                                Interval = reader["Interval"].ToString(),
+                                volume = reader.GetDecimal(reader.GetOrdinal("volume")),
+                                notes = reader["notes"] as string,
+                                Season = new Season
+                                {
+                                    season_name = reader["season_name"].ToString()
+                                },
+                                ActionType = new ActionType
+                                {
+                                    type_name = reader["action_type_name"].ToString()
+                                }
+                            });
+                        }
+                    }
+
+                    reader.Close();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Error fetching plant details: {0}", ex.Message);
+                }
+            }
 
             if (plant == null)
             {
@@ -120,6 +166,9 @@ namespace KursovaHomeGarden.Controllers
 
             return View(plant);
         }
+
+
+
 
 
 

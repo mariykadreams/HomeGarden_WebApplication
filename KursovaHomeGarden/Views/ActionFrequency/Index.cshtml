@@ -14,7 +14,6 @@
                 <tr>
                     <th>Interval</th>
                     <th>Volume</th>
-                    <th>Notes</th>
                     <th>Plant</th>
                     <th>Season</th>
                     <th>Action Type</th>
@@ -28,14 +27,6 @@
                     <tr>
                         <td class="text-center">@item.Interval</td>
                         <td class="text-center">@item.volume</td>
-                        <td class="text-center" title="@item.notes">
-                            @(string.IsNullOrEmpty(item.notes)
-                                ? "-"
-                                : (item.notes.Length > 50
-                                ? item.notes.Substring(0, 50) + "..."
-                                : item.notes))
-                        </td>
-
                         <td class="text-center">@item.Plant?.name</td>
                         <td class="text-center">@item.season_id</td>
                         <td class="text-center">@item.action_type_id</td>

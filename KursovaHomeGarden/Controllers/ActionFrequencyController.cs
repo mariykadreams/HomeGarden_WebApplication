@@ -42,7 +42,6 @@ namespace KursovaHomeGarden.Controllers
                                 Action_frequency_id = reader.GetInt32("Action_frequency_id"),
                                 Interval = reader.GetString("Interval"),
                                 volume = reader.GetDecimal("volume"),
-                                notes = reader.IsDBNull("notes") ? null : reader.GetString("notes"),
                                 plant_id = reader.GetInt32("plant_id"),
                                 Plant = new Plant { name = reader.GetString("plant_name") },
                                 season_id = reader.GetInt32("season_id"),
@@ -206,6 +205,7 @@ namespace KursovaHomeGarden.Controllers
         public IActionResult Edit(ActionFrequency actionFrequency)
         {
             System.Diagnostics.Debug.WriteLine($"Edit method started");
+            System.Diagnostics.Debug.WriteLine($"Interval value: {actionFrequency.Interval ?? "null"}");
             System.Diagnostics.Debug.WriteLine($"Received action frequency: ID={actionFrequency.Action_frequency_id}, " +
     $"Notes={actionFrequency.notes ?? "null"}, " +
     $"PlantId={actionFrequency.plant_id}, " +

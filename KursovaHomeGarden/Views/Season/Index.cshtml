@@ -1,0 +1,43 @@
+﻿@* Path: Views/Season/Index.cshtml *@
+@model IEnumerable<KursovaHomeGarden.Models.Season>
+
+@{
+    ViewData["Title"] = "Seasons";
+}
+
+<h1>Seasons</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Season Name</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Min Temperature</th>
+            <th>Max Temperature</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.season_name</td>
+                <td>@item.season_start.ToShortDateString()</td>
+                <td>@item.season_end.ToShortDateString()</td>
+                <td>@item.temperature_range_min°C</td>
+                <td>@item.temperature_range_max°C</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.season_id" class="btn btn-warning">Edit</a>
+                   
+                    <a asp-action="Delete" asp-route-id="@item.season_id" class="btn btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>

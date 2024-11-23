@@ -1,62 +1,99 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-// Controllers/ActionFrequencyController.cs
-using Microsoft.AspNetCore.Mvc;
 using KursovaHomeGarden.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using KursovaHomeGarden.Models.Plant;
-using static Azure.Core.HttpHeader;
 
 namespace KursovaHomeGarden.Controllers
 {
-   
-
     public class ActionFrequencyController : Controller
     {
         private readonly string _connectionString;
+        private readonly ILogger<ActionFrequencyController> _logger;
 
-        public ActionFrequencyController(IConfiguration configuration)
+        public ActionFrequencyController(IConfiguration configuration, ILogger<ActionFrequencyController> logger)
         {
             _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
+            _logger = logger;
         }
-
 
         public IActionResult Index()
         {
             var actionFrequencies = new List<ActionFrequency>();
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
-                string query = @"SELECT af.*, p.name as plant_name 
-                        FROM ActionFrequencies af 
-                        LEFT JOIN Plants p ON af.plant_id = p.plant_id";
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    connection.Open();
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            actionFrequencies.Add(new ActionFrequency
-                            {
-                                Action_frequency_id = reader.GetInt32("Action_frequency_id"),
-                                Interval = reader.GetString("Interval"),
-                                volume = reader.GetDecimal("volume"),
-                                plant_id = reader.GetInt32("plant_id"),
-                                Plant = new Plant { name = reader.GetString("plant_name") },
-                                season_id = reader.GetInt32("season_id"),
-                                action_type_id = reader.GetInt32("action_type_id"),
-                                Fert_type_id = reader.IsDBNull("Fert_type_id") ? null : reader.GetInt32("Fert_type_id")
-                            });
+                    string query = @"SELECT af.Action_frequency_id, 
+                                   af.Interval, 
+                                   af.volume, 
+                                   af.notes,
+                                   af.plant_id, 
+                                   af.season_id, 
+                                   af.action_type_id, 
+                                   af.Fert_type_id,
+                                   p.name as plant_name,
+                                   s.season_name,
+                                   at.type_name
+                            FROM ActionFrequencies af 
+                            LEFT JOIN Plants p ON af.plant_id = p.plant_id
+                            LEFT JOIN Seasons s ON af.season_id = s.season_id
+                            LEFT JOIN ActionTypes at ON af.action_type_id = at.action_type_id";
 
+                    using (SqlCommand command = new SqlCommand(query, connection))
+                    {
+                        command.CommandTimeout = 30;
+                        connection.Open();
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var actionFrequency = new ActionFrequency
+                                {
+                                    Action_frequency_id = reader.GetInt32(reader.GetOrdinal("Action_frequency_id")),
+                                    Interval = reader.GetString(reader.GetOrdinal("Interval")),
+                                    volume = reader.GetDecimal(reader.GetOrdinal("volume")),
+                                    notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes")),
+                                    plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                                    Plant = new Plant
+                                    {
+                                        name = reader.GetString(reader.GetOrdinal("plant_name"))
+                                    },
+                                    season_id = reader.GetInt32(reader.GetOrdinal("season_id")),
+                                    Season = new Season
+                                    {
+                                        season_name = reader.GetString(reader.GetOrdinal("season_name"))
+                                    },
+                                    action_type_id = reader.GetInt32(reader.GetOrdinal("action_type_id")),
+                                    ActionType = new ActionType
+                                    {
+                                        type_name = reader.GetString(reader.GetOrdinal("type_name"))
+                                    },
+                                    Fert_type_id = reader.IsDBNull(reader.GetOrdinal("Fert_type_id")) ?
+                                        null : reader.GetInt32(reader.GetOrdinal("Fert_type_id"))
+                                };
+                                actionFrequencies.Add(actionFrequency);
+                            }
                         }
                     }
                 }
+                return View(actionFrequencies);
             }
-            return View(actionFrequencies);
+            catch (SqlException ex)
+            {
+                _logger.LogError($"Database error: {ex.Message}");
+                TempData["Error"] = "Unable to retrieve action frequencies. Please try again later.";
+                return View(new List<ActionFrequency>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unexpected error: {ex.Message}");
+                TempData["Error"] = "An unexpected error occurred. Please try again later.";
+                return View(new List<ActionFrequency>());
+            }
         }
-
-
 
         public IActionResult Create()
         {
@@ -66,40 +103,12 @@ namespace KursovaHomeGarden.Controllers
             return View();
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(ActionFrequency actionFrequency)
         {
-
-            System.Diagnostics.Debug.WriteLine($"Create method started");
-            System.Diagnostics.Debug.WriteLine($"Received action frequency: PlantId={actionFrequency.plant_id}, SeasonId={actionFrequency.season_id}, ActionTypeId={actionFrequency.action_type_id}, Volume={actionFrequency.volume}");
-            System.Diagnostics.Debug.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
-
             if (!ModelState.IsValid)
             {
-                foreach (var modelStateEntry in ModelState.Values)
-                {
-                    foreach (var error in modelStateEntry.Errors)
-                    {
-                    System.Diagnostics.Debug.WriteLine($"Validation error: {error.ErrorMessage}");
-                    }
-                }
-            }
-            // Add validation checks similar to PlantController
-            if (string.IsNullOrWhiteSpace(actionFrequency.Interval))
-            {
-                ModelState.AddModelError("Interval", "Interval is required.");
-            }
-
-            if (actionFrequency.volume <= 0)
-            {
-                ModelState.AddModelError("volume", "Volume must be greater than 0.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                // Repopulate ViewBag data before returning to view
                 ViewBag.Plants = GetPlants();
                 ViewBag.Seasons = GetSeasons();
                 ViewBag.ActionTypes = GetActionTypes();
@@ -111,7 +120,7 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     string query = @"INSERT INTO ActionFrequencies 
-                           (Interval, volume,notes, plant_id, season_id, action_type_id, Fert_type_id) 
+                           (Interval, volume, notes, plant_id, season_id, action_type_id, Fert_type_id) 
                            VALUES 
                            (@Interval, @volume, @notes, @plant_id, @season_id, @action_type_id, @Fert_type_id)";
 
@@ -134,16 +143,14 @@ namespace KursovaHomeGarden.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error creating action frequency: {ex.Message}");
-                ViewBag.Message = $"Error: {ex.Message}";
+                _logger.LogError($"Error creating action frequency: {ex.Message}");
+                ModelState.AddModelError("", "Error creating action frequency. Please try again.");
                 ViewBag.Plants = GetPlants();
                 ViewBag.Seasons = GetSeasons();
                 ViewBag.ActionTypes = GetActionTypes();
                 return View(actionFrequency);
             }
         }
-
-
 
         [HttpGet]
         public IActionResult Edit(int id)
@@ -154,12 +161,12 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     string query = @"
-                SELECT af.*, p.name as plant_name, s.season_name, at.type_name 
-                FROM ActionFrequencies af
-                JOIN Plants p ON af.plant_id = p.plant_id
-                JOIN Seasons s ON af.season_id = s.season_id
-                JOIN ActionTypes at ON af.action_type_id = at.action_type_id
-                WHERE Action_frequency_id = @id";
+                    SELECT af.*, p.name as plant_name, s.season_name, at.type_name 
+                    FROM ActionFrequencies af
+                    JOIN Plants p ON af.plant_id = p.plant_id
+                    JOIN Seasons s ON af.season_id = s.season_id
+                    JOIN ActionTypes at ON af.action_type_id = at.action_type_id
+                    WHERE Action_frequency_id = @id";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
@@ -185,10 +192,9 @@ namespace KursovaHomeGarden.Controllers
 
                 if (actionFrequency == null)
                 {
-                    return RedirectToAction("Index");
+                    return NotFound();
                 }
 
-                // Load ViewBag data
                 ViewBag.Plants = GetPlants();
                 ViewBag.Seasons = GetSeasons();
                 ViewBag.ActionTypes = GetActionTypes();
@@ -196,7 +202,7 @@ namespace KursovaHomeGarden.Controllers
             }
             catch (Exception ex)
             {
-                ViewBag.Message = $"Error: {ex.Message}";
+                _logger.LogError($"Error retrieving action frequency: {ex.Message}");
                 return RedirectToAction("Index");
             }
         }
@@ -204,42 +210,13 @@ namespace KursovaHomeGarden.Controllers
         [HttpPost]
         public IActionResult Edit(ActionFrequency actionFrequency)
         {
-            System.Diagnostics.Debug.WriteLine($"Edit method started");
-            System.Diagnostics.Debug.WriteLine($"Interval value: {actionFrequency.Interval ?? "null"}");
-            System.Diagnostics.Debug.WriteLine($"Received action frequency: ID={actionFrequency.Action_frequency_id}, " +
-    $"Notes={actionFrequency.notes ?? "null"}, " +
-    $"PlantId={actionFrequency.plant_id}, " +
-    $"SeasonId={actionFrequency.season_id}, " +
-    $"ActionTypeId={actionFrequency.action_type_id}, " +
-    $"FertTypeId={actionFrequency.Fert_type_id?.ToString() ?? "null"}");
-
-
-        
-
-            if (actionFrequency.volume <= 0)
-            {
-                ModelState.AddModelError("volume", "Volume must be greater than 0.");
-            }
-
             if (!ModelState.IsValid)
             {
-                // Log validation errors
-                foreach (var modelStateEntry in ModelState.Values)
-                {
-                    foreach (var error in modelStateEntry.Errors)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Validation error: {error.ErrorMessage}");
-                    }
-                }
-
-                // Reload required dropdown data
                 ViewBag.Plants = GetPlants();
                 ViewBag.Seasons = GetSeasons();
                 ViewBag.ActionTypes = GetActionTypes();
-
                 return View(actionFrequency);
             }
-
 
             try
             {
@@ -260,7 +237,7 @@ namespace KursovaHomeGarden.Controllers
                         command.Parameters.AddWithValue("@Action_frequency_id", actionFrequency.Action_frequency_id);
                         command.Parameters.AddWithValue("@Interval", actionFrequency.Interval);
                         command.Parameters.AddWithValue("@volume", actionFrequency.volume);
-                        command.Parameters.AddWithValue("@notes", actionFrequency.notes ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@notes", (object)actionFrequency.notes ?? DBNull.Value);
                         command.Parameters.AddWithValue("@plant_id", actionFrequency.plant_id);
                         command.Parameters.AddWithValue("@season_id", actionFrequency.season_id);
                         command.Parameters.AddWithValue("@action_type_id", actionFrequency.action_type_id);
@@ -268,8 +245,7 @@ namespace KursovaHomeGarden.Controllers
                             actionFrequency.Fert_type_id.HasValue ? (object)actionFrequency.Fert_type_id : DBNull.Value);
 
                         connection.Open();
-                        var rowsAffected = command.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine($"Rows affected: {rowsAffected}");
+                        command.ExecuteNonQuery();
                     }
                 }
 
@@ -277,10 +253,8 @@ namespace KursovaHomeGarden.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error updating action frequency: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                _logger.LogError($"Error updating action frequency: {ex.Message}");
                 ViewBag.Message = $"Error: {ex.Message}";
-                // Reload ViewBag data if update fails
                 ViewBag.Plants = GetPlants();
                 ViewBag.Seasons = GetSeasons();
                 ViewBag.ActionTypes = GetActionTypes();
@@ -288,57 +262,70 @@ namespace KursovaHomeGarden.Controllers
             }
         }
 
-
-
         public IActionResult Delete(int id)
         {
-            ActionFrequency actionFrequency = null;
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
-                using (SqlCommand command = new SqlCommand("SELECT * FROM ActionFrequencies WHERE Action_frequency_id = @id", connection))
+                ActionFrequency actionFrequency = null;
+                using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    command.Parameters.AddWithValue("@id", id);
-                    connection.Open();
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    using (SqlCommand command = new SqlCommand("SELECT * FROM ActionFrequencies WHERE Action_frequency_id = @id", connection))
                     {
-                        if (reader.Read())
+                        command.Parameters.AddWithValue("@id", id);
+                        connection.Open();
+                        using (SqlDataReader reader = command.ExecuteReader())
                         {
-                            actionFrequency = new ActionFrequency
+                            if (reader.Read())
                             {
-                                Action_frequency_id = reader.GetInt32("Action_frequency_id"),
-                                volume = reader.GetDecimal("volume"),
-                                plant_id = reader.GetInt32("plant_id"),
-                                season_id = reader.GetInt32("season_id"),
-                                action_type_id = reader.GetInt32("action_type_id"),
-                                Fert_type_id = reader.IsDBNull("Fert_type_id") ? null : reader.GetInt32("Fert_type_id")
-                            };
+                                actionFrequency = new ActionFrequency
+                                {
+                                    Action_frequency_id = reader.GetInt32(reader.GetOrdinal("Action_frequency_id")),
+                                    volume = reader.GetDecimal(reader.GetOrdinal("volume")),
+                                    plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                                    season_id = reader.GetInt32(reader.GetOrdinal("season_id")),
+                                    action_type_id = reader.GetInt32(reader.GetOrdinal("action_type_id")),
+                                    Fert_type_id = reader.IsDBNull(reader.GetOrdinal("Fert_type_id")) ? null : reader.GetInt32(reader.GetOrdinal("Fert_type_id"))
+                                };
+                            }
                         }
                     }
                 }
-            }
 
-            if (actionFrequency == null)
-            {
-                return NotFound();
+                if (actionFrequency == null)
+                {
+                    return NotFound();
+                }
+                return View(actionFrequency);
             }
-            return View(actionFrequency);
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving action frequency for deletion: {ex.Message}");
+                return RedirectToAction("Index");
+            }
         }
 
-      
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
         {
-            using (SqlConnection connection = new SqlConnection(_connectionString))
+            try
             {
-                using (SqlCommand command = new SqlCommand("DELETE FROM ActionFrequencies WHERE Action_frequency_id = @id", connection))
+                using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    command.Parameters.AddWithValue("@id", id);
-                    connection.Open();
-                    command.ExecuteNonQuery();
+                    using (SqlCommand command = new SqlCommand("DELETE FROM ActionFrequencies WHERE Action_frequency_id = @id", connection))
+                    {
+                        command.Parameters.AddWithValue("@id", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
                 }
+                return RedirectToAction(nameof(Index));
             }
-            return RedirectToAction(nameof(Index));
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error deleting action frequency: {ex.Message}");
+                return RedirectToAction("Index");
+            }
         }
 
         private List<SelectListItem> GetPlants()
@@ -357,7 +344,7 @@ namespace KursovaHomeGarden.Controllers
                             plants.Add(new SelectListItem
                             {
                                 Value = reader["plant_id"].ToString(),
-                                Text = $"{reader["name"]} (ID: {reader["plant_id"]})"
+                                Text = reader["name"].ToString()
                             });
                         }
                     }
@@ -375,14 +362,16 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     connection.Open();
-                    SqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        seasons.Add(new SelectListItem
+                        while (reader.Read())
                         {
-                            Value = reader["season_id"].ToString(),
-                            Text = $"{reader["season_name"]}"
-                        });
+                            seasons.Add(new SelectListItem
+                            {
+                                Value = reader["season_id"].ToString(),
+                                Text = reader["season_name"].ToString()
+                            });
+                        }
                     }
                 }
             }
@@ -398,20 +387,20 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     connection.Open();
-                    SqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        actionTypes.Add(new SelectListItem
+                        while (reader.Read())
                         {
-                            Value = reader["action_type_id"].ToString(),
-                            Text = reader["type_name"].ToString()
-                        });
+                            actionTypes.Add(new SelectListItem
+                            {
+                                Value = reader["action_type_id"].ToString(),
+                                Text = reader["type_name"].ToString()
+                            });
+                        }
                     }
                 }
             }
             return actionTypes;
         }
-
     }
-
 }

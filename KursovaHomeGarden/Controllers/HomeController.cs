@@ -103,17 +103,24 @@ namespace KursovaHomeGarden.Controllers
         public IActionResult Details(int id)
         {
             var plant = _context.Plants
-                .Include(p => p.Category)  // Include the related Category
-                .Include(p => p.CareLevel)  // Include the related CareLevel
-                .FirstOrDefault(p => p.plant_id == id);  // Fetch the plant by ID
+                .Include(p => p.Category)
+                .Include(p => p.CareLevel)
+                .Include(p => p.ActionFrequencies)
+                    .ThenInclude(af => af.Season)
+                .Include(p => p.ActionFrequencies)
+                    .ThenInclude(af => af.ActionType)
+                .Include(p => p.ActionFrequencies)
+                    .ThenInclude(af => af.Fertilize)
+                .FirstOrDefault(p => p.plant_id == id);
 
             if (plant == null)
             {
-                return NotFound();  // Return 404 if the plant is not found
+                return NotFound();
             }
 
-            return View(plant);  // Return the plant to the Details view
+            return View(plant);
         }
+
 
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

@@ -2,6 +2,13 @@
 
 <div class="row">
     <div class="col-md-10 mx-auto rounded border p-3">
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">
+                @TempData["Error"]
+            </div>
+        }
         <h2 class="text-center mb-4">Action Frequencies</h2>
 
         <div class="d-flex justify-content-between mb-3">

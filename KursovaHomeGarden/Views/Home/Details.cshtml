@@ -37,9 +37,49 @@
                     </div>
 
                     <div class="row">
-         
                         <div class="col-12 pb-4">
                             <span class="badge bg-info text-uppercase">Care Level: @Model.CareLevel.level_name</span>
+                        </div>
+                    </div>
+
+                    <!-- Care Instructions Section -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4 class="mb-3">Care Instructions</h4>
+                            @if (Model.ActionFrequencies != null && Model.ActionFrequencies.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Season</th>
+                                                <th>Action</th>
+                                                <th>Interval</th>
+                                                <th>Volume</th>
+                                                <th>Additional Notes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var action in Model.ActionFrequencies)
+                                            {
+                                                <tr>
+                                                    <td>@action.Season?.season_name</td>
+                                                    <td>@action.ActionType?.type_name</td>
+                                                    <td>@action.Interval</td>
+                                                    <td>@action.volume</td>
+                                                    <td>@(string.IsNullOrEmpty(action.notes) ? "-" : action.notes)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info">
+                                    No specific care instructions have been set for this plant yet.
+                                </div>
+                            }
                         </div>
                     </div>
 

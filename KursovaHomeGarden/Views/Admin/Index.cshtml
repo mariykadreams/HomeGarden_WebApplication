@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<button id="loadTableBtn" class="btn btn-primary">Load Action Frequencies</button>
+
+<div id="tableContainer"></div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $("#loadTableBtn").click(function () {
+                $.ajax({
+                    url: '@Url.Action("GetActionFrequencies", "Admin")',
+                    type: 'POST',
+                    success: function (result) {
+                        $("#tableContainer").html(result);
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            });
+        });
+    </script>
+}

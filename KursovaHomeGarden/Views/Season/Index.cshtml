@@ -14,6 +14,7 @@
 <table class="table">
     <thead>
         <tr>
+            <th>ID</th>
             <th>Season Name</th>
             <th>Start Date</th>
             <th>End Date</th>
@@ -26,6 +27,7 @@
         @foreach (var item in Model)
         {
             <tr>
+                <td>@item.season_id</td>
                 <td>@item.season_name</td>
                 <td>@item.season_start.ToShortDateString()</td>
                 <td>@item.season_end.ToShortDateString()</td>
@@ -33,11 +35,76 @@
                 <td>@item.temperature_range_max°C</td>
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.season_id" class="btn btn-warning">Edit</a>
-                   
-                    <a asp-action="Delete" asp-route-id="@item.season_id" class="btn btn-danger">Delete</a>
+
+                    <!-- Triggering delete confirmation function instead of directly linking -->
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete(@item.season_id)">Delete</button>
                 </td>
             </tr>
         }
-
     </tbody>
 </table>
+
+<!-- Include the SweetAlert2 script -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script type="text/javascript">
+    function confirmDelete(seasonId) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel",
+            customClass: {
+                confirmButton: 'btn btn-primary me-2',
+                cancelButton: 'btn btn-danger'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/Season/Delete/' + seasonId, 
+                    type: 'POST',
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: 'Your season has been deleted.',
+                                icon: 'success',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                            setTimeout(function () {
+                                location.reload(); // Reload the page to reflect the changes
+                            }, 1000);
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message,
+                                icon: 'error',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Something went wrong.',
+                            icon: 'error',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>

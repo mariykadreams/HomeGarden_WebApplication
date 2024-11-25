@@ -168,5 +168,50 @@ namespace KursovaHomeGarden.Controllers
             }
         }
 
+        [HttpPost]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    const string checkQuery = "SELECT COUNT(*) FROM ActionFrequencies WHERE action_type_id = @actionTypeId";
+                    using (SqlCommand command = new SqlCommand(checkQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@actionTypeId", id);
+                        connection.Open();
+                        int count = (int)command.ExecuteScalar();
+
+                        if (count > 0)
+                        {
+                            return Json(new { success = false, message = "This action type cannot be deleted because it is linked to other records." });
+                        }
+                    }
+                }
+
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    const string deleteQuery = "DELETE FROM ActionTypes WHERE action_type_id = @actionTypeId";
+                    using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@actionTypeId", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                return Json(new { success = true });
+            }
+            catch (SqlException ex)
+            {
+                return Json(new { success = false, message = $"SQL Error: {ex.Message}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+
     }
 }

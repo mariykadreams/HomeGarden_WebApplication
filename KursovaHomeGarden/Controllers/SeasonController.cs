@@ -198,5 +198,51 @@ namespace KursovaHomeGarden.Controllers
                 return View(season);
             }
         }
+
+
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    const string checkQuery = "SELECT COUNT(*) FROM ActionFrequencies WHERE season_id = @seasonId";
+                    using (SqlCommand command = new SqlCommand(checkQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@seasonId", id);
+                        connection.Open();
+                        int count = (int)command.ExecuteScalar();
+
+                        if (count > 0)
+                        {
+                            return Json(new { success = false, message = "This season cannot be deleted because it is linked to other records." });
+                        }
+                    }
+                }
+
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    const string deleteQuery = "DELETE FROM Seasons WHERE season_id = @seasonId";
+                    using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@seasonId", id);
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                return Json(new { success = true });
+            }
+            catch (SqlException ex)
+            {
+                return Json(new { success = false, message = $"SQL Error: {ex.Message}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
     }
 }

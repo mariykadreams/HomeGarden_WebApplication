@@ -32,7 +32,14 @@
                 <td>@plant.Category?.category_name</td>
                 <td>@plant.CareLevel?.level_name</td>
                 <td>
-                    <img src="/images/plants/@plant.img" width="100" alt="Plant Image" />
+                    @if (string.IsNullOrEmpty(plant.img))
+                    {
+                        <span>-</span>
+                    }
+                    else
+                    {
+                        <img src="/images/plants/@plant.img" width="100" alt="Plant Image" />
+                    }
                 </td>
                 <td>
                     <a class="btn btn-sm btn-primary" asp-controller="Plants" asp-action="Edit" asp-route-id="@plant.plant_id">Edit</a>
@@ -46,62 +53,109 @@
 
 <script type="text/javascript">
     function confirmDelete(plantId) {
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, delete it!",
-            cancelButtonText: "Cancel",
-            customClass: {
-                confirmButton: 'btn btn-primary me-2',
-                cancelButton: 'btn btn-danger'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: '/Plants/Delete/' + plantId,
-                    type: 'POST',
-                    success: function (response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: 'Deleted!',
-                                text: 'Your plant has been deleted.',
-                                icon: 'success',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary'
-                                },
-                                buttonsStyling: false
-                            });
-                            setTimeout(function () {
-                                location.reload();
-                            }, 2000);
-                        } else {
-                            Swal.fire({
-                                title: 'Error!',
-                                text: response.message,
-                                icon: 'error',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary'
-                                },
-                                buttonsStyling: false
-                            });
+        $.ajax({
+            url: '/Plants/CheckAndDelete',
+            type: 'POST',
+            data: { id: plantId },
+            success: function (response) {
+                if (response.referenced) {
+                    Swal.fire({
+                        title: "Are you sure?",
+                        text: response.message,
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete it!",
+                        cancelButtonText: "Cancel",
+                        customClass: {
+                            confirmButton: 'btn btn-primary me-2',
+                            cancelButton: 'btn btn-danger'
+                        },
+                        buttonsStyling: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            deletePlantAndReferences(plantId);
                         }
+                    });
+                } else if (response.success) {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: response.message,
+                        icon: 'success',
+                        customClass: {
+                            confirmButton: 'btn btn-primary'
+                        },
+                        buttonsStyling: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: response.message,
+                        icon: 'error',
+                        customClass: {
+                            confirmButton: 'btn btn-primary'
+                        },
+                        buttonsStyling: false
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Something went wrong.',
+                    icon: 'error',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
                     },
-                    error: function (xhr, status, error) {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Something went wrong.',
-                            icon: 'error',
-                            customClass: {
-                                confirmButton: 'btn btn-primary'
-                            },
-                            buttonsStyling: false
-                        });
-                    }
+                    buttonsStyling: false
                 });
             }
         });
     }
+
+    function deletePlantAndReferences(plantId) {
+        $.ajax({
+            url: '/Plants/DeletePlantAndReferences',
+            type: 'POST',
+            data: { id: plantId },
+            success: function (response) {
+                if (response.success) {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: response.message,
+                        icon: 'success',
+                        customClass: {
+                            confirmButton: 'btn btn-primary'
+                        },
+                        buttonsStyling: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: response.message,
+                        icon: 'error',
+                        customClass: {
+                            confirmButton: 'btn btn-primary'
+                        },
+                        buttonsStyling: false
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Something went wrong.',
+                    icon: 'error',
+                    customClass: {
+                        confirmButton: 'btn btn-primary'
+                    },
+                    buttonsStyling: false
+                });
+            }
+        });
+    }
+
 </script>

@@ -94,12 +94,10 @@ namespace KursovaHomeGarden.Controllers
         [HttpPost]
         public IActionResult Create(Plant plant)
         {
-            // Логируем полученные данные
             System.Diagnostics.Debug.WriteLine($"Create method started");
             System.Diagnostics.Debug.WriteLine($"Received plant: Name={plant.name}, Price={plant.price}, CategoryId={plant.category_id}, CareLevelId={plant.care_level_id}");
             System.Diagnostics.Debug.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
 
-            // Проверяем ошибки валидации
             foreach (var modelState in ModelState.Values)
             {
                 foreach (var error in modelState.Errors)
@@ -392,6 +390,95 @@ namespace KursovaHomeGarden.Controllers
                 }
             }
             return careLevels;
+        }
+
+        [HttpPost]
+        public JsonResult CheckAndDelete(int id)
+        {
+            try
+            {
+                bool isReferenced = false;
+
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    string checkQuery = "SELECT COUNT(*) FROM ActionFrequencies WHERE plant_id = @plant_id";
+                    using (SqlCommand command = new SqlCommand(checkQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@plant_id", id);
+                        connection.Open();
+                        isReferenced = (int)command.ExecuteScalar() > 0;
+                    }
+                }
+
+                if (isReferenced)
+                {
+                    return Json(new { referenced = true, message = "The plant is referenced in ActionFrequencies. Are you sure you want to delete it?" });
+                }
+
+                DeletePlantAndReferences(id);
+                return Json(new { success = true, message = "Plant deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
+        }
+
+
+        [HttpPost]
+        public JsonResult DeletePlantAndReferences(int id)
+        {
+            try
+            {
+                string imageFileName = null;
+
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    string getImageQuery = "SELECT img FROM Plants WHERE plant_id = @plant_id";
+                    using (SqlCommand command = new SqlCommand(getImageQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@plant_id", id);
+                        connection.Open();
+                        var result = command.ExecuteScalar();
+                        imageFileName = result == DBNull.Value ? null : (string)result;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(imageFileName))
+                {
+                    var imageFilePath = Path.Combine(_environment.WebRootPath, "images/plants", imageFileName);
+                    if (System.IO.File.Exists(imageFilePath))
+                    {
+                        System.IO.File.Delete(imageFilePath);
+                    }
+                }
+
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    string deleteActionFrequencies = "DELETE FROM ActionFrequencies WHERE plant_id = @plant_id";
+                    string deletePlant = "DELETE FROM Plants WHERE plant_id = @plant_id";
+
+                    connection.Open();
+
+                    using (SqlCommand command = new SqlCommand(deleteActionFrequencies, connection))
+                    {
+                        command.Parameters.AddWithValue("@plant_id", id);
+                        command.ExecuteNonQuery();
+                    }
+
+                    using (SqlCommand command = new SqlCommand(deletePlant, connection))
+                    {
+                        command.Parameters.AddWithValue("@plant_id", id);
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                return Json(new { success = true, message = "Plant, related references, and image deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
         }
 
 

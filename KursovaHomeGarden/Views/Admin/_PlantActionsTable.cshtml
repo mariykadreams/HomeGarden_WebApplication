@@ -1,0 +1,32 @@
+﻿@model List<dynamic>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Plant Name</th>
+            <th>Season</th>
+            <th>Action Type</th>
+            <th>Interval</th>
+            <th>Volume</th>
+            <th>Notes</th>
+            <th>Fertilizer</th>
+            <th>Fertilizer Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.PlantName</td>
+                <td>@item.SeasonName</td>
+                <td>@item.ActionType</td>
+                <td>@item.Interval</td>
+                <td>@item.Volume</td>
+                <td>@item.Notes</td>
+                <td>@item.FertName</td>
+                <td>@item.FertDescription</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

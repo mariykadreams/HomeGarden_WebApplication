@@ -1,0 +1,62 @@
+﻿@model KursovaHomeGarden.Models.Season
+
+@{
+    ViewData["Title"] = "Create Season";
+}
+
+<h1>Create Season</h1>
+
+@if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+{
+    <div class="alert alert-danger">
+        @ViewData["ErrorMessage"]
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="season_name" class="control-label">Season Name</label>
+                <input asp-for="season_name" class="form-control" />
+                <span asp-validation-for="season_name" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="season_start" class="control-label">Start Date</label>
+                <input asp-for="season_start" class="form-control" type="date" />
+                <span asp-validation-for="season_start" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="season_end" class="control-label">End Date</label>
+                <input asp-for="season_end" class="form-control" type="date" />
+                <span asp-validation-for="season_end" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="temperature_range_min" class="control-label">Min Temperature (°C)</label>
+                <input asp-for="temperature_range_min" class="form-control" type="number" step="0.1" />
+                <span asp-validation-for="temperature_range_min" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="temperature_range_max" class="control-label">Max Temperature (°C)</label>
+                <input asp-for="temperature_range_max" class="form-control" type="number" step="0.1" />
+                <span asp-validation-for="temperature_range_max" class="text-danger"></span>
+            </div>
+
+
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -157,12 +157,10 @@ public class CategoryController : Controller
     }
 
     [HttpPost]
-    [HttpPost]
     public IActionResult Delete(int id)
     {
         try
         {
-            // Проверка на наличие связанных записей в таблице Plants
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 const string checkQuery = "SELECT COUNT(*) FROM Plants WHERE category_id = @categoryId";
@@ -172,7 +170,6 @@ public class CategoryController : Controller
                     connection.Open();
                     int count = (int)command.ExecuteScalar();
 
-                    // Если есть связанные записи, нельзя удалить категорию
                     if (count > 0)
                     {
                         return Json(new { success = false, message = "This category cannot be deleted because it is linked to other records." });
@@ -180,7 +177,6 @@ public class CategoryController : Controller
                 }
             }
 
-            // Если связанных записей нет, удаляем категорию
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 const string deleteQuery = "DELETE FROM Categories WHERE category_id = @categoryId";

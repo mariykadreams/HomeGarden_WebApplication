@@ -73,15 +73,15 @@ public class HomeGardenDbContext : IdentityDbContext<ApplicationUser>
         .HasForeignKey<SunlightRequirement>(sr => sr.plant_id);
 
         builder.Entity<ActionFrequency>()
-        .Property(af => af.volume)
-        .HasPrecision(10, 2); 
+              .Property(af => af.volume)
+              .HasColumnType("decimal(10,2)");
 
         builder.Entity<Season>()
             .Property(s => s.temperature_range_max)
-            .HasPrecision(5, 2);
+            .HasColumnType("decimal(5,1)");
 
         builder.Entity<Season>()
             .Property(s => s.temperature_range_min)
-            .HasPrecision(5, 2);
+            .HasColumnType("decimal(5,1)");
     }
 }

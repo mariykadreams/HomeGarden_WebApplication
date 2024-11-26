@@ -262,71 +262,44 @@ namespace KursovaHomeGarden.Controllers
             }
         }
 
+        [HttpPost]
         public IActionResult Delete(int id)
         {
             try
             {
-                ActionFrequency actionFrequency = null;
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    using (SqlCommand command = new SqlCommand("SELECT * FROM ActionFrequencies WHERE Action_frequency_id = @id", connection))
+                    const string deleteQuery = "DELETE FROM ActionFrequencies WHERE Action_frequency_id = @actionFrequencyId";
+                    using (SqlCommand command = new SqlCommand(deleteQuery, connection))
                     {
-                        command.Parameters.AddWithValue("@id", id);
+                        command.Parameters.AddWithValue("@actionFrequencyId", id);
                         connection.Open();
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
                         {
-                            if (reader.Read())
-                            {
-                                actionFrequency = new ActionFrequency
-                                {
-                                    Action_frequency_id = reader.GetInt32(reader.GetOrdinal("Action_frequency_id")),
-                                    volume = reader.GetDecimal(reader.GetOrdinal("volume")),
-                                    plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
-                                    season_id = reader.GetInt32(reader.GetOrdinal("season_id")),
-                                    action_type_id = reader.GetInt32(reader.GetOrdinal("action_type_id")),
-                                    Fert_type_id = reader.IsDBNull(reader.GetOrdinal("Fert_type_id")) ? null : reader.GetInt32(reader.GetOrdinal("Fert_type_id"))
-                                };
-                            }
+                            return Json(new { success = true });
+                        }
+                        else
+                        {
+                            return Json(new { success = false, message = "Record not found or could not be deleted." });
                         }
                     }
                 }
-
-                if (actionFrequency == null)
-                {
-                    return NotFound();
-                }
-                return View(actionFrequency);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError($"SQL Error while deleting action frequency: {ex.Message}");
+                return Json(new { success = false, message = "Database error occurred while deleting the record." });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error retrieving action frequency for deletion: {ex.Message}");
-                return RedirectToAction("Index");
+                _logger.LogError($"Error while deleting action frequency: {ex.Message}");
+                return Json(new { success = false, message = "An error occurred while deleting the record." });
             }
         }
 
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(int id)
-        {
-            try
-            {
-                using (SqlConnection connection = new SqlConnection(_connectionString))
-                {
-                    using (SqlCommand command = new SqlCommand("DELETE FROM ActionFrequencies WHERE Action_frequency_id = @id", connection))
-                    {
-                        command.Parameters.AddWithValue("@id", id);
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error deleting action frequency: {ex.Message}");
-                return RedirectToAction("Index");
-            }
-        }
+
 
         private List<SelectListItem> GetPlants()
         {

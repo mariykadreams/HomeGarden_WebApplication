@@ -8,7 +8,6 @@
         <form asp-action="Edit" method="post" id="action-frequency-edit-form">
             <input type="hidden" asp-for="Action_frequency_id" />
 
-            <!-- Move Interval field inside the form -->
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Interval</label>
                 <div class="col-sm-8">
@@ -56,7 +55,7 @@
                     <span asp-validation-for="Fert_type_id" class="text-danger"></span>
                 </div>
             </div>
-            <!-- Add this inside the form, before the buttons -->
+
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Notes</label>
                 <div class="col-sm-8">

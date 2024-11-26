@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<KursovaHomeGarden.Models.ActionFrequency>
+@Html.AntiForgeryToken()
 
 <div class="row">
     <div class="col-md-10 mx-auto rounded border p-3">
@@ -43,7 +44,7 @@
 
                         <td class="text-center">
                             <a class="btn btn-sm btn-primary me-2" asp-action="Edit" asp-route-id="@item.Action_frequency_id">Edit</a>
-                            <a class="btn btn-sm btn-danger" asp-action="Delete" asp-route-id="@item.Action_frequency_id">Delete</a>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDeleteActionFrequency(@item.Action_frequency_id)">Delete</button>
                         </td>
                     </tr>
                 }
@@ -51,3 +52,68 @@
         </table>
     </div>
 </div>
+<script type="text/javascript">
+    function confirmDeleteActionFrequency(actionFrequencyId) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel",
+            customClass: {
+                confirmButton: 'btn btn-primary me-2',
+                cancelButton: 'btn btn-danger'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/ActionFrequency/Delete/' + actionFrequencyId,
+                    type: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: 'The action frequency has been deleted.',
+                                icon: 'success',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message || 'Something went wrong.',
+                                icon: 'error',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Something went wrong while deleting the record.',
+                            icon: 'error',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+
+</script>

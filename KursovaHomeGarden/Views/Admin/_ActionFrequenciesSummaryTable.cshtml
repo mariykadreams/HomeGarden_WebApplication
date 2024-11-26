@@ -1,21 +1,45 @@
 ﻿@model IEnumerable<dynamic>
 
-<div class="table-responsive mt-4">
-    <table class="table table-striped table-bordered">
-        <thead class="thead-dark">
-            <tr>
-                <th>Action Type</th>
-                <th>Frequency Count</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.ActionType</td>
-                    <td>@item.ActionFrequencyCount</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Action Frequency Report</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Action Type</th>
+                            <th>Frequency Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold">@item.ActionType</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">@item.ActionFrequencyCount</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-center">
+                                    <p class="text-muted mb-0">No actions found for the selected period.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>

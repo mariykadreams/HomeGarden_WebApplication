@@ -4,201 +4,153 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Dynamic;
 
-namespace KursovaHomeGarden.Controllers.Users
+namespace KursovaHomeGarden.Controllers
 {
-	public class AdminController : Controller
-	{
-		private readonly string _connectionString;
-		private readonly IWebHostEnvironment _webHostEnvironment;
+    public class AdminController : Controller
+    {
+        private readonly string _connectionString;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-		public AdminController(IConfiguration configuration, IWebHostEnvironment webHostEnvironment)
-		{
-			_connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
-			_webHostEnvironment = webHostEnvironment;
-		}
+        public AdminController(IConfiguration configuration, IWebHostEnvironment webHostEnvironment)
+        {
+            _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
+            _webHostEnvironment = webHostEnvironment;
+        }
 
+        public IActionResult Index()
+        {
+            var plants = new List<Plant>();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = "SELECT plant_id, name FROM Plants";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            plants.Add(new Plant
+                            {
+                                plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                                name = reader.GetString(reader.GetOrdinal("name"))
+                            });
+                        }
+                    }
+                }
+            }
 
-		public IActionResult Index()
-		{
-			var plants = new List<Plant>();
-			using (var connection = new SqlConnection(_connectionString))
-			{
-				connection.Open();
-				var query = "SELECT plant_id, name FROM Plants";
-				using (var command = new SqlCommand(query, connection))
-				{
-					using (var reader = command.ExecuteReader())
-					{
-						while (reader.Read())
-						{
-							plants.Add(new Plant
-							{
-								plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
-								name = reader.GetString(reader.GetOrdinal("name"))
-							});
-						}
-					}
-				}
-			}
+            ViewBag.Plants = plants;
+            return View();
+        }
 
-			ViewBag.Plants = plants;
-			return View();
-		}
+        [HttpPost]
+        public IActionResult GetActionFrequenciesSummary()
+        {
+            var actionFrequencies = new List<dynamic>();
 
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT 
+                        at.action_type_id,
+                        at.type_name AS action_type,
+                        COUNT(af.action_frequency_id) AS action_frequency_count
+                    FROM 
+                        ActionTypes at
+                    LEFT JOIN
+                        ActionFrequencies af ON at.action_type_id = af.action_type_id
+                    GROUP BY 
+                        at.action_type_id, at.type_name
+                    ORDER BY 
+                        action_frequency_count DESC;";
 
-		[HttpPost]
-		public IActionResult GetActionFrequencies()
-		{
-			var actionFrequencies = new List<dynamic>();
+                using (var command = new SqlCommand(query, connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            dynamic item = new ExpandoObject();
+                            item.ActionTypeId = reader.GetInt32(0);
+                            item.ActionType = reader.GetString(1);
+                            item.ActionFrequencyCount = reader.GetInt32(2);
+                            actionFrequencies.Add(item);
+                        }
+                    }
+                }
+            }
 
-			using (var connection = new SqlConnection(_connectionString))
-			{
-				connection.Open();
-				using (var command = new SqlCommand(GetSqlQuery(), connection))
-				{
-					using (var reader = command.ExecuteReader())
-					{
-						while (reader.Read())
-						{
-							dynamic item = new ExpandoObject();
-							item.ActionTypeId = reader.GetInt32(0);
-							item.ActionType = reader.GetString(1);
-							item.ActionFrequencyCount = reader.GetInt32(2);
-							actionFrequencies.Add(item);
-						}
-					}
-				}
-			}
+            return PartialView("_ActionFrequenciesSummaryTable", actionFrequencies);
+        }
 
-			return PartialView("_ActionFrequenciesTable", actionFrequencies);
-		}
+        [HttpPost]
+        public IActionResult GetActionFrequencies(DateTime startDate, DateTime endDate, int plantId)
+        {
+            var actionFrequencies = new List<dynamic>();
 
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    WITH DateRange AS (
+                        SELECT 
+                            DATEDIFF(day, @StartDate, @EndDate) + 1 AS total_days
+                    )
+                    SELECT 
+                        at.type_name as action_type,
+                        CAST(af.Interval AS VARCHAR(50)) as interval_str,
+                        af.volume,
+                        af.notes,
+                        CAST(CEILING(
+                            CAST(DateRange.total_days AS FLOAT) / 
+                            CAST(af.Interval AS FLOAT)
+                        ) AS INT) as required_actions
+                    FROM 
+                        ActionFrequencies af
+                    JOIN 
+                        ActionTypes at ON af.action_type_id = at.action_type_id
+                    CROSS JOIN 
+                        DateRange
+                    WHERE 
+                        af.plant_id = @PlantId
+                    ORDER BY 
+                        at.type_name;";
 
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@StartDate", startDate);
+                    command.Parameters.AddWithValue("@EndDate", endDate);
+                    command.Parameters.AddWithValue("@PlantId", plantId);
 
-		[HttpPost]
-		public IActionResult GetPlantActions(DateTime startDate, DateTime endDate, int plantId)
-		{
-			var plantActions = new List<dynamic>();
+                    try
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                dynamic item = new ExpandoObject();
+                                item.ActionType = reader.GetString(reader.GetOrdinal("action_type"));
+                                item.Interval = reader.GetString(reader.GetOrdinal("interval_str"));
+                                item.Volume = Math.Round(reader.GetDecimal(reader.GetOrdinal("volume")), 2);
+                                item.Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes"));
+                                item.RequiredActions = reader.GetInt32(reader.GetOrdinal("required_actions"));
+                                actionFrequencies.Add(item);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error executing query: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
 
-			using (var connection = new SqlConnection(_connectionString))
-			{
-				connection.Open();
-
-				// Use the stored procedure to get plant actions
-				using (var command = new SqlCommand(GetSqlQuery1(), connection))
-				{
-					command.CommandType = CommandType.StoredProcedure;
-
-					// Add the parameters for the stored procedure
-					command.Parameters.AddWithValue("@StartDate", startDate);
-					command.Parameters.AddWithValue("@EndDate", endDate);
-					command.Parameters.AddWithValue("@PlantId", plantId);
-
-					using (var reader = command.ExecuteReader())
-					{
-						while (reader.Read())
-						{
-							// Create dynamic objects for each row
-							dynamic item = new ExpandoObject();
-							item.PlantId = reader.GetInt32(reader.GetOrdinal("plant_id"));
-							item.PlantName = reader.GetString(reader.GetOrdinal("plant_name"));
-							item.SeasonName = reader.GetString(reader.GetOrdinal("season_name"));
-							item.TypeName = reader.GetString(reader.GetOrdinal("type_name"));
-							item.Interval = reader.GetString(reader.GetOrdinal("Interval"));
-							item.Volume = reader.GetDecimal(reader.GetOrdinal("volume"));
-							item.Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes"));
-							item.FertName = reader.IsDBNull(reader.GetOrdinal("fert_name")) ? null : reader.GetString(reader.GetOrdinal("fert_name"));
-							item.FertDescription = reader.IsDBNull(reader.GetOrdinal("fert_description")) ? null : reader.GetString(reader.GetOrdinal("fert_description"));
-
-							// Add the dynamic item to the list
-							plantActions.Add(item);
-						}
-					}
-				}
-			}
-
-			// Return the partial view with the data
-			return PartialView("_PlantActionsTable", plantActions);
-		}
-
-
-
-
-
-
-		private string LoadSqlFromFile(string fileName)
-		{
-			var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "sql", fileName);
-			if (!System.IO.File.Exists(filePath))
-			{
-				throw new FileNotFoundException($"SQL file not found: {filePath}");
-			}
-			return System.IO.File.ReadAllText(filePath);
-		}
-
-
-
-		public string GetSqlQuery1()
-		{
-			return @"CREATE PROCEDURE GetPlantActionsForPeriod
-    @StartDate DATE,
-    @EndDate DATE,
-    @PlantId INT
-AS
-BEGIN
-    SELECT 
-        p.plant_id,
-        p.plant_name,
-        s.season_name,
-        at.type_name,
-        af.Interval,
-        af.volume,
-        af.notes,
-        f.fert_name,
-        f.fert_description
-    FROM 
-        ActionFrequencies af -- Changed from ActionFrequency to ActionFrequencies
-    INNER JOIN 
-        Plants p ON af.plant_id = p.plant_id
-    INNER JOIN 
-        Seasons s ON af.season_id = s.season_id
-    INNER JOIN 
-        ActionTypes at ON af.action_type_id = at.action_type_id
-    LEFT JOIN 
-        Fertilizes f ON af.Fert_type_id = f.Fert_type_id
-    WHERE 
-        p.plant_id = @PlantId
-        AND (
-            (@StartDate BETWEEN s.season_start AND s.season_end)
-            OR (@EndDate BETWEEN s.season_start AND s.season_end)
-            OR (s.season_start BETWEEN @StartDate AND @EndDate)
-        )
-    ORDER BY 
-        s.season_start, at.type_name, af.Interval;
-END;
-";
-		}
-
-		private string GetSqlQuery()
-		{
-			return @"
-                SELECT 
-                    af.action_type_id,
-                    at.type_name AS action_type,
-                    COUNT(af.action_type_id) AS action_frequency_count
-                FROM 
-                    [KursovaHomeGardenDB].[dbo].[ActionFrequencies] af
-                JOIN
-                    [KursovaHomeGardenDB].[dbo].[ActionTypes] at
-                    ON af.action_type_id = at.action_type_id
-                GROUP BY 
-                    af.action_type_id, at.type_name
-                ORDER BY 
-                    action_frequency_count DESC;
-            ";
-		}
-	}
+            return PartialView("_PlantActionFrequenciesTable", actionFrequencies);
+        }
+    }
 }

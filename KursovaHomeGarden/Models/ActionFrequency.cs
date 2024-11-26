@@ -12,7 +12,6 @@ namespace KursovaHomeGarden.Models
         [Required]
         public string Interval { get; set; }
 
-        [Required]
         public decimal volume { get; set; }
 
         public string? notes { get; set; }

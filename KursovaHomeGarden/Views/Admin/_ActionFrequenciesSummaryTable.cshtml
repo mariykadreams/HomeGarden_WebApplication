@@ -1,0 +1,21 @@
+﻿@model IEnumerable<dynamic>
+
+<div class="table-responsive mt-4">
+    <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>Action Type</th>
+                <th>Frequency Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.ActionType</td>
+                    <td>@item.ActionFrequencyCount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

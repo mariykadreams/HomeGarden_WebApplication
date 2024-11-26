@@ -6,64 +6,87 @@
 
 <button id="loadTableBtn" class="btn btn-primary">Load Action Frequencies</button>
 
-<form id="plantActionForm">
-    <div class="form-group">
-        <label for="startDate">Start Date:</label>
-        <input type="date" id="startDate" name="startDate" class="form-control" required>
-    </div>
-    <div class="form-group">
-        <label for="endDate">End Date:</label>
-        <input type="date" id="endDate" name="endDate" class="form-control" required>
-    </div>
-    <div class="form-group">
-        <label for="plantId">Plant:</label>
-        <select id="plantId" name="plantId" class="form-control" required>
-            <option value="">Select a plant</option>
-            @foreach (var plant in ViewBag.Plants)
-            {
-                <option value="@plant.plant_id">@plant.name</option>
-            }
-        </select>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Get Plant Actions</button>
-</form>
-
 <div id="tableContainer"></div>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Plant Care Schedule Calculator</h2>
+
+    <form id="plantActionForm" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="startDate">Start Date:</label>
+                    <input type="date" id="startDate" name="startDate" class="form-control" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="endDate">End Date:</label>
+                    <input type="date" id="endDate" name="endDate" class="form-control" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="plantId">Plant:</label>
+                    <select id="plantId" name="plantId" class="form-control" required>
+                        <option value="">Select a plant</option>
+                        @foreach (var plant in ViewBag.Plants)
+                        {
+                            <option value="@plant.plant_id">@plant.name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                <button type="submit" class="btn btn-primary">Calculate Care Schedule</button>
+            </div>
+        </div>
+    </form>
+
+    <div id="resultsContainer"></div>
+</div>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Handler for Load Action Frequencies button
+            // Load Action Frequencies button
             $("#loadTableBtn").click(function () {
                 $.ajax({
-                    url: '@Url.Action("GetActionFrequencies", "Admin")',
+                    url: '@Url.Action("GetActionFrequenciesSummary", "Admin")',
                     type: 'POST',
                     success: function (result) {
                         $("#tableContainer").html(result);
                     },
                     error: function (error) {
-                        console.log(error);
+                        console.error('Error loading action frequencies:', error);
+                        $("#tableContainer").html('<div class="alert alert-danger">Error loading data. Please try again.</div>');
                     }
                 });
             });
 
-            // Handler for Get Plant Actions form submission
-            $("#plantActionForm").submit(function (e) {
+            // plant action form submission
+            $('#plantActionForm').on('submit', function (e) {
                 e.preventDefault();
+
                 $.ajax({
-                    url: '@Url.Action("GetPlantActions", "Admin")',
+                    url: '@Url.Action("GetActionFrequencies", "Admin")',
                     type: 'POST',
-                    data: $(this).serialize(),
+                    data: {
+                        startDate: $('#startDate').val(),
+                        endDate: $('#endDate').val(),
+                        plantId: $('#plantId').val()
+                    },
                     success: function (result) {
-                        $("#tableContainer").html(result);
+                        $('#resultsContainer').html(result);
                     },
                     error: function (error) {
-                        console.log(error);
+                        console.error('Error calculating schedule:', error);
+                        $('#resultsContainer').html('<div class="alert alert-danger">An error occurred while fetching the data.</div>');
                     }
                 });
             });
         });
     </script>
 }
-

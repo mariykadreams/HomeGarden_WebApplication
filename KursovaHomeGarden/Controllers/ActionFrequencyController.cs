@@ -54,7 +54,7 @@ namespace KursovaHomeGarden.Controllers
                                 {
                                     Action_frequency_id = reader.GetInt32(reader.GetOrdinal("Action_frequency_id")),
                                     Interval = reader.GetString(reader.GetOrdinal("Interval")),
-                                    volume = reader.GetDecimal(reader.GetOrdinal("volume")),
+                                    volume = reader.IsDBNull(reader.GetOrdinal("volume")) ? null : reader.GetDecimal(reader.GetOrdinal("volume")),
                                     notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes")),
                                     plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
                                     Plant = new Plant
@@ -127,13 +127,12 @@ namespace KursovaHomeGarden.Controllers
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@Interval", actionFrequency.Interval);
-                        command.Parameters.AddWithValue("@volume", actionFrequency.volume);
+                        command.Parameters.AddWithValue("@volume", actionFrequency.volume.HasValue ? (object)actionFrequency.volume.Value : DBNull.Value);
                         command.Parameters.AddWithValue("@notes", (object)actionFrequency.notes ?? DBNull.Value);
                         command.Parameters.AddWithValue("@plant_id", actionFrequency.plant_id);
                         command.Parameters.AddWithValue("@season_id", actionFrequency.season_id);
                         command.Parameters.AddWithValue("@action_type_id", actionFrequency.action_type_id);
-                        command.Parameters.AddWithValue("@Fert_type_id",
-                            (object)actionFrequency.Fert_type_id ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@Fert_type_id", (object)actionFrequency.Fert_type_id ?? DBNull.Value);
 
                         connection.Open();
                         command.ExecuteNonQuery();
@@ -236,7 +235,7 @@ namespace KursovaHomeGarden.Controllers
                     {
                         command.Parameters.AddWithValue("@Action_frequency_id", actionFrequency.Action_frequency_id);
                         command.Parameters.AddWithValue("@Interval", actionFrequency.Interval);
-                        command.Parameters.AddWithValue("@volume", actionFrequency.volume);
+                        command.Parameters.AddWithValue("@volume", actionFrequency.volume.HasValue ? (object)actionFrequency.volume.Value : DBNull.Value);
                         command.Parameters.AddWithValue("@notes", (object)actionFrequency.notes ?? DBNull.Value);
                         command.Parameters.AddWithValue("@plant_id", actionFrequency.plant_id);
                         command.Parameters.AddWithValue("@season_id", actionFrequency.season_id);

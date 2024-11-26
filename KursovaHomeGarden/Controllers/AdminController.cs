@@ -103,7 +103,6 @@ namespace KursovaHomeGarden.Controllers
                     SELECT 
                         at.type_name as action_type,
                         CAST(af.Interval AS VARCHAR(50)) as interval_str,
-                        af.volume,
                         af.notes,
                         CAST(CEILING(
                             CAST(DateRange.total_days AS FLOAT) / 
@@ -135,7 +134,6 @@ namespace KursovaHomeGarden.Controllers
                                 dynamic item = new ExpandoObject();
                                 item.ActionType = reader.GetString(reader.GetOrdinal("action_type"));
                                 item.Interval = reader.GetString(reader.GetOrdinal("interval_str"));
-                                item.Volume = Math.Round(reader.GetDecimal(reader.GetOrdinal("volume")), 2);
                                 item.Notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes"));
                                 item.RequiredActions = reader.GetInt32(reader.GetOrdinal("required_actions"));
                                 actionFrequencies.Add(item);

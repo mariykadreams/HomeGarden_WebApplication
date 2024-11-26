@@ -34,7 +34,9 @@
                 {
                     <tr>
                         <td class="text-center">@item.Interval</td>
-                        <td class="text-center">@item.volume</td>
+                        <td class="text-center">
+                            @(item.volume.HasValue ? item.volume.ToString() : "-")
+                        </td>
                         <td class="text-center">@item.Plant?.name</td>
                         <td class="text-center">@item.season_id</td>
                         <td class="text-center">@item.action_type_id</td>

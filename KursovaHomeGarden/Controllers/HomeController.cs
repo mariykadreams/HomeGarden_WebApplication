@@ -120,7 +120,7 @@ namespace KursovaHomeGarden.Controllers
                             {
                                 Action_frequency_id = reader.GetInt32(reader.GetOrdinal("Action_frequency_id")),
                                 Interval = reader.GetString(reader.GetOrdinal("Interval")),
-                                volume = reader.GetDecimal(reader.GetOrdinal("volume")),
+                                volume = reader.IsDBNull(reader.GetOrdinal("volume")) ? null : reader.GetDecimal(reader.GetOrdinal("volume")),
                                 notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes")),
                                 Season = new Season
                                 {
@@ -150,6 +150,7 @@ namespace KursovaHomeGarden.Controllers
 
             return View(plant);
         }
+
 
         public IActionResult Privacy()
         {

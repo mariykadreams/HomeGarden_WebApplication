@@ -6,30 +6,30 @@
 
         <form method="post" enctype="multipart/form-data" id="plantForm">
             <div class="row mb-3">
-                <label for="name" class="col-sm-4 col-form-label">Name</label>
+                <label class="col-sm-4 col-form-label">Plant Name</label>
                 <div class="col-sm-8">
-                    <input class="form-control" id="name" asp-for="name" autocomplete="name" required />
+                    <input class="form-control" asp-for="name" />
                     <span asp-validation-for="name" class="text-danger"></span>
                 </div>
             </div>
             <div class="row mb-3">
-                <label for="description" class="col-sm-4 col-form-label">Description</label>
+                <label  class="col-sm-4 col-form-label">Description</label>
                 <div class="col-sm-8">
-                    <textarea class="form-control" id="description" asp-for="description" autocomplete="off"></textarea>
+                    <textarea class="form-control" id="description" asp-for="description" ></textarea>
                     <span asp-validation-for="description" class="text-danger"></span>
                 </div>
             </div>
             <div class="row mb-3">
                 <label for="price" class="col-sm-4 col-form-label">Price</label>
                 <div class="col-sm-8">
-                    <input class="form-control" id="price" asp-for="price" type="number" step="0.01" autocomplete="off" required />
+                    <input class="form-control" id="price" asp-for="price" type="number" step="0.01" />
                     <span asp-validation-for="price" class="text-danger"></span>
                 </div>
             </div>
             <div class="row mb-3">
                 <label for="category" class="col-sm-4 col-form-label">Category</label>
                 <div class="col-sm-8">
-                    <select class="form-control" id="category" asp-for="category_id" asp-items="ViewBag.Categories" required>
+                    <select class="form-control" id="category" asp-for="category_id" asp-items="ViewBag.Categories" >
                         <option value="" disabled selected>---</option>
                     </select>
                     <span asp-validation-for="category_id" class="text-danger"></span>
@@ -38,7 +38,7 @@
             <div class="row mb-3">
                 <label for="care_level" class="col-sm-4 col-form-label">Care Level</label>
                 <div class="col-sm-8">
-                    <select class="form-control" id="care_level" asp-for="care_level_id" asp-items="ViewBag.CareLevels" required>
+                    <select class="form-control" id="care_level" asp-for="care_level_id" asp-items="ViewBag.CareLevels" >
                         <option value="" disabled selected>---</option>
                     </select>
                     <span asp-validation-for="care_level_id" class="text-danger"></span>
@@ -110,10 +110,6 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
     <script>
         document.getElementById('saveSunlight').addEventListener('click', async function () {
             const form = document.getElementById('sunlightForm');

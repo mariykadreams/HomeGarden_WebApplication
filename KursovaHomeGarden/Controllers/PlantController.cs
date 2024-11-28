@@ -5,9 +5,12 @@ using KursovaHomeGarden.Models.CareLevel;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using Microsoft.AspNetCore.Authorization;
+using KursovaHomeGarden.Areas.Identity.Data;
 
 namespace KursovaHomeGarden.Controllers
 {
+    [Authorize(Roles = SD.Role_Admin)]
     public class PlantsController : Controller
     {
         private readonly string _connectionString;
@@ -100,6 +103,7 @@ namespace KursovaHomeGarden.Controllers
         }
 
         [HttpGet]
+    
         public IActionResult Create()
         {
             try

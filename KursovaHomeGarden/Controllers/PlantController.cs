@@ -18,6 +18,30 @@ namespace KursovaHomeGarden.Controllers
             _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
             _environment = environment;
         }
+        private List<SelectListItem> GetSunlightRequirements()
+        {
+            List<SelectListItem> requirements = new List<SelectListItem>();
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                string query = @"SELECT sunlight_requirements_id, 
+                               light_intensity + ' (' + CAST(hours_per_day AS VARCHAR) + ' hours/day)' AS display_text 
+                        FROM SunlightRequirements";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        requirements.Add(new SelectListItem
+                        {
+                            Value = reader["sunlight_requirements_id"].ToString(),
+                            Text = reader["display_text"].ToString()
+                        });
+                    }
+                }
+            }
+            return requirements;
+        }
 
         [HttpGet]
         public IActionResult Index()
@@ -82,6 +106,7 @@ namespace KursovaHomeGarden.Controllers
             {
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
+                ViewBag.SunlightRequirements = GetSunlightRequirements(); // Add this line
                 return View();
             }
             catch (Exception ex)
@@ -154,37 +179,34 @@ namespace KursovaHomeGarden.Controllers
             {
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Connection string: {_connectionString}");
-                    string query = "INSERT INTO Plants (name, description, price, category_id, care_level_id, img) " +
-                                   "VALUES (@name, @description, @price, @category_id, @care_level_id, @img)";
+                    string query = @"INSERT INTO Plants 
+                (name, description, price, category_id, care_level_id, sunlight_requirements_id, img) 
+                VALUES (@name, @description, @price, @category_id, @care_level_id, @sunlight_requirements_id, @img)";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
-                        System.Diagnostics.Debug.WriteLine("Setting up SQL parameters");
                         command.Parameters.AddWithValue("@name", plant.name);
                         command.Parameters.AddWithValue("@description", plant.description ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@price", plant.price);
                         command.Parameters.AddWithValue("@category_id", plant.category_id);
                         command.Parameters.AddWithValue("@care_level_id", plant.care_level_id);
+                        command.Parameters.AddWithValue("@sunlight_requirements_id",
+                            (object)plant.sunlight_requirements_id ?? DBNull.Value);
                         command.Parameters.AddWithValue("@img", plant.img ?? (object)DBNull.Value);
 
                         connection.Open();
-                        System.Diagnostics.Debug.WriteLine("Executing SQL command");
-                        var rowsAffected = command.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine($"Rows affected: {rowsAffected}");
+                        command.ExecuteNonQuery();
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine("Successfully inserted plant, redirecting to Index");
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error inserting plant: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-                ViewBag.Message = $"Error: {ex.Message}";
+                ModelState.AddModelError("", ex.Message);
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
+                ViewBag.SunlightRequirements = GetSunlightRequirements();
                 return View(plant);
             }
         }
@@ -238,7 +260,6 @@ namespace KursovaHomeGarden.Controllers
         [HttpPost]
         public IActionResult Edit(Plant plant)
         {
-            // Add logging
             System.Diagnostics.Debug.WriteLine($"Edit method started");
             System.Diagnostics.Debug.WriteLine($"Received plant: ID={plant.plant_id}, Name={plant.name}, Price={plant.price}");
 
@@ -267,8 +288,6 @@ namespace KursovaHomeGarden.Controllers
                 }
             }
 
-
-            // Handle image upload
             if (HttpContext.Request.Form.Files["img"] is IFormFile imageFile)
             {
                 var filePath = Path.Combine(_environment.WebRootPath, "images/plants");
@@ -285,7 +304,6 @@ namespace KursovaHomeGarden.Controllers
                     imageFile.CopyTo(stream);
                 }
 
-                // Delete old image if exists
                 if (!string.IsNullOrEmpty(currentImg))
                 {
                     var oldImagePath = Path.Combine(_environment.WebRootPath, "images/plants", currentImg);
@@ -299,7 +317,6 @@ namespace KursovaHomeGarden.Controllers
             }
             else
             {
-                // Если новая картинка не загружена, сохраняем текущую
                 plant.img = currentImg;
             }
 

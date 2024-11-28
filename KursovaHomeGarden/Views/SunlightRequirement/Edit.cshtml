@@ -1,0 +1,44 @@
+﻿@model KursovaHomeGarden.Models.SunlightRequirement
+
+@{
+    ViewBag.Title = "Edit Sunlight Requirement";
+}
+
+<h2 class="text-center mb-5">Edit Sunlight Requirement</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="sunlight_requirements_id" />
+
+            <div class="form-group mb-3">
+                <label asp-for="light_intensity" class="control-label"></label>
+                <input asp-for="light_intensity" class="form-control" />
+                <span asp-validation-for="light_intensity" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="hours_per_day" class="control-label"></label>
+                <input asp-for="hours_per_day" class="form-control" type="number" min="0" max="24" />
+                <span asp-validation-for="hours_per_day" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="notes" class="control-label"></label>
+                <textarea asp-for="notes" class="form-control"></textarea>
+                <span asp-validation-for="notes" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <input type="submit" value="Save" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

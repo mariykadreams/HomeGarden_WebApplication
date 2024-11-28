@@ -17,6 +17,7 @@
             <th>Price</th>
             <th>Category</th>
             <th>Care Level</th>
+            <th>Sunlight Requirements</th>
             <th>Image</th>
             <th>Action</th>
         </tr>
@@ -32,6 +33,16 @@
                 <td>@plant.Category?.category_name</td>
                 <td>@plant.CareLevel?.level_name</td>
                 <td>
+                    @if (plant.SunlightRequirement != null)
+                    {
+                        <span>@plant.SunlightRequirement.light_intensity (@plant.SunlightRequirement.hours_per_day hours/day)</span>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </td>
+                <td>
                     @if (string.IsNullOrEmpty(plant.img))
                     {
                         <span>-</span>
@@ -46,7 +57,6 @@
                     <a class="btn btn-sm btn-danger" onclick="confirmDelete('@plant.plant_id')" href="javascript:void(0);">Delete</a>
                 </td>
             </tr>
-
         }
     </tbody>
 </table>
@@ -157,5 +167,4 @@
             }
         });
     }
-
 </script>

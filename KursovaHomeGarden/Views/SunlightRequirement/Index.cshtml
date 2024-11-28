@@ -1,0 +1,112 @@
+﻿@model List<KursovaHomeGarden.Models.SunlightRequirement>
+
+@{
+    ViewBag.Title = "Sunlight Requirements Management";
+}
+
+<h2 class="text-center mb-5">Sunlight Requirements List</h2>
+
+<div class="mb-4">
+    <a class="btn btn-primary" asp-action="Create">Add New Sunlight Requirement</a>
+</div>
+
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-danger">@ViewBag.Message</div>
+}
+
+@if (Model != null && Model.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Light Intensity</th>
+                <th>Hours Per Day</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var requirement in Model)
+            {
+                <tr>
+                    <td>@requirement.sunlight_requirements_id</td>
+                    <td>@requirement.light_intensity</td>
+                    <td>@requirement.hours_per_day</td>
+                    <td>@requirement.notes</td>
+                    <td>
+                        <a href="@Url.Action("Edit", "SunlightRequirement", new { id = requirement.sunlight_requirements_id })" class="btn btn-warning btn-sm">Edit</a>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(@requirement.sunlight_requirements_id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No sunlight requirements found.</p>
+}
+
+<script type="text/javascript">
+    function confirmDelete(id) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel",
+            customClass: {
+                confirmButton: 'btn btn-primary me-2',
+                cancelButton: 'btn btn-danger'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/SunlightRequirement/Delete/' + id,
+                    type: 'POST',
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: 'The sunlight requirement has been deleted.',
+                                icon: 'success',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                            setTimeout(function () {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message,
+                                icon: 'error',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Something went wrong.',
+                            icon: 'error',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Identity.Client.Cache;
 using KursovaHomeGarden.Models.Category;
+using KursovaHomeGarden.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
@@ -33,6 +34,8 @@ namespace KursovaHomeGarden.Models.Plant
         public int care_level_id { get; set; }
 
         public CareLevel.CareLevel? CareLevel { get; set; }
+
+        public int? sunlight_requirements_id { get; set; }
 
         public SunlightRequirement? SunlightRequirement { get; set; }
 

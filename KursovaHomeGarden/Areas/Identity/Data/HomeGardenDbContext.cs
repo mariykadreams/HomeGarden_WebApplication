@@ -63,10 +63,7 @@ public class HomeGardenDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(af => af.action_type_id)
             .IsRequired();
 
-        builder.Entity<Plant>()
-        .HasOne(p => p.SunlightRequirement)
-        .WithOne(sr => sr.Plant)
-        .HasForeignKey<SunlightRequirement>(sr => sr.plant_id);
+   
 
         builder.Entity<ActionFrequency>()
               .Property(af => af.volume)

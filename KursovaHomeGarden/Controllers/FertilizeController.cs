@@ -6,10 +6,12 @@ using KursovaHomeGarden.Models;
 public class FertilizeController : Controller
 {
     private readonly string _connectionString;
+    private readonly ILogger<FertilizeController> _logger;
 
-    public FertilizeController(IConfiguration configuration)
+    public FertilizeController(IConfiguration configuration, ILogger<FertilizeController> logger)
     {
         _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
+        _logger = logger;
     }
 
     [HttpGet]
@@ -42,6 +44,7 @@ public class FertilizeController : Controller
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error retrieving fertilizers");
             ViewBag.Message = $"Error: {ex.Message}";
         }
 
@@ -51,40 +54,58 @@ public class FertilizeController : Controller
     [HttpGet]
     public IActionResult Create()
     {
-        return View();
+        return View(new Fertilize());
     }
 
     [HttpPost]
-    public IActionResult Create(Fertilize fertilize)
+    [ValidateAntiForgeryToken]
+    public IActionResult Create([Bind("type_name,units,note")] Fertilize fertilize)
     {
-        if (!ModelState.IsValid)
-        {
-            return View(fertilize);
-        }
-
         try
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                const string query = "INSERT INTO Fertilizes (type_name, units, note) VALUES (@typeName, @units, @note)";
-                using (SqlCommand command = new SqlCommand(query, connection))
+                connection.Open();
+                using var transaction = connection.BeginTransaction();
+
+                try
                 {
-                    command.Parameters.AddWithValue("@typeName", fertilize.type_name);
-                    command.Parameters.AddWithValue("@units", fertilize.units);
-                    command.Parameters.AddWithValue("@note", (object)fertilize.note ?? DBNull.Value);
-                    connection.Open();
-                    command.ExecuteNonQuery();
+                    const string insertQuery = @"
+                        INSERT INTO Fertilizes (type_name, units, note) 
+                        VALUES (@typeName, @units, @note);
+                        SELECT SCOPE_IDENTITY();";
+
+                    using (SqlCommand command = new SqlCommand(insertQuery, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@typeName", fertilize.type_name);
+                        command.Parameters.AddWithValue("@units", fertilize.units);
+                        command.Parameters.AddWithValue("@note", (object)fertilize.note ?? DBNull.Value);
+
+                        var newId = Convert.ToInt32(command.ExecuteScalar());
+                        fertilize.Fert_type_id = newId;
+                    }
+
+                    transaction.Commit();
+                    _logger.LogInformation($"Created new fertilizer with ID: {fertilize.Fert_type_id}");
+
+                    TempData["SuccessMessage"] = "Fertilizer created successfully!";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
-
-            return RedirectToAction("Index");
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error creating fertilizer");
             ViewBag.Message = $"Error: {ex.Message}";
             return View(fertilize);
         }
     }
+
 
     [HttpGet]
     public IActionResult Edit(int id)
@@ -119,21 +140,29 @@ public class FertilizeController : Controller
 
             if (fertilize == null)
             {
-                return RedirectToAction("Index");
+                _logger.LogWarning($"Fertilizer with ID {id} not found");
+                return NotFound();
             }
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, $"Error retrieving fertilizer with ID {id}");
             ViewBag.Message = $"Error: {ex.Message}";
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
         }
 
         return View(fertilize);
     }
 
     [HttpPost]
-    public IActionResult Edit(int id, Fertilize fertilize)
+    [ValidateAntiForgeryToken]
+    public IActionResult Edit(int id, [Bind("Fert_type_id,type_name,units,note")] Fertilize fertilize)
     {
+        if (id != fertilize.Fert_type_id)
+        {
+            return NotFound();
+        }
+
         if (!ModelState.IsValid)
         {
             return View(fertilize);
@@ -143,63 +172,100 @@ public class FertilizeController : Controller
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                const string query = "UPDATE Fertilizes SET type_name = @typeName, units = @units, note = @note WHERE Fert_type_id = @fertTypeId";
-                using (SqlCommand command = new SqlCommand(query, connection))
+                connection.Open();
+                using var transaction = connection.BeginTransaction();
+
+                try
                 {
-                    command.Parameters.AddWithValue("@typeName", fertilize.type_name);
-                    command.Parameters.AddWithValue("@units", fertilize.units);
-                    command.Parameters.AddWithValue("@note", (object)fertilize.note ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@fertTypeId", id);
-                    connection.Open();
-                    command.ExecuteNonQuery();
+                    const string query = "UPDATE Fertilizes SET type_name = @typeName, units = @units, note = @note WHERE Fert_type_id = @fertTypeId";
+                    using (SqlCommand command = new SqlCommand(query, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@typeName", fertilize.type_name);
+                        command.Parameters.AddWithValue("@units", fertilize.units);
+                        command.Parameters.AddWithValue("@note", (object)fertilize.note ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@fertTypeId", id);
+
+                        int rowsAffected = command.ExecuteNonQuery();
+                        if (rowsAffected == 0)
+                        {
+                            throw new Exception("No records were updated. The fertilizer may have been deleted by another user.");
+                        }
+                    }
+
+                    transaction.Commit();
+                    _logger.LogInformation($"Updated fertilizer with ID: {id}");
+
+                    TempData["SuccessMessage"] = "Fertilizer updated successfully!";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw new Exception("Error while updating fertilizer", ex);
                 }
             }
-
-            return RedirectToAction("Index");
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, $"Error updating fertilizer with ID {id}");
+            ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, contact your system administrator.");
             ViewBag.Message = $"Error: {ex.Message}";
             return View(fertilize);
         }
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult Delete(int id)
     {
         try
         {
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                const string checkQuery = "SELECT COUNT(*) FROM ActionFrequencies WHERE Fert_type_id = @fertTypeId";
-                using (SqlCommand command = new SqlCommand(checkQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@fertTypeId", id);
-                    connection.Open();
-                    int count = (int)command.ExecuteScalar();
+                connection.Open();
+                using var transaction = connection.BeginTransaction();
 
-                    if (count > 0)
+                try
+                {
+                    const string checkQuery = "SELECT COUNT(*) FROM ActionFrequencies WHERE Fert_type_id = @fertTypeId";
+                    using (SqlCommand command = new SqlCommand(checkQuery, connection, transaction))
                     {
-                        return Json(new { success = false, message = "This fertilizer cannot be deleted because it is linked to action frequencies." });
+                        command.Parameters.AddWithValue("@fertTypeId", id);
+                        int count = (int)command.ExecuteScalar();
+
+                        if (count > 0)
+                        {
+                            return Json(new { success = false, message = "This fertilizer cannot be deleted because it is linked to action frequencies." });
+                        }
                     }
-                }
-            }
 
-            using (SqlConnection connection = new SqlConnection(_connectionString))
-            {
-                const string deleteQuery = "DELETE FROM Fertilizes WHERE Fert_type_id = @fertTypeId";
-                using (SqlCommand command = new SqlCommand(deleteQuery, connection))
+                    const string deleteQuery = "DELETE FROM Fertilizes WHERE Fert_type_id = @fertTypeId";
+                    using (SqlCommand command = new SqlCommand(deleteQuery, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@fertTypeId", id);
+                        int rowsAffected = command.ExecuteNonQuery();
+
+                        if (rowsAffected == 0)
+                        {
+                            throw new Exception("No records were deleted. The fertilizer may have been deleted by another user.");
+                        }
+                    }
+
+                    transaction.Commit();
+                    _logger.LogInformation($"Deleted fertilizer with ID: {id}");
+
+                    return Json(new { success = true });
+                }
+                catch (Exception ex)
                 {
-                    command.Parameters.AddWithValue("@fertTypeId", id);
-                    connection.Open();
-                    command.ExecuteNonQuery();
+                    transaction.Rollback();
+                    throw new Exception("Error while deleting fertilizer", ex);
                 }
             }
-
-            return Json(new { success = true });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, $"Error deleting fertilizer with ID {id}");
             return Json(new { success = false, message = $"Error: {ex.Message}" });
         }
     }

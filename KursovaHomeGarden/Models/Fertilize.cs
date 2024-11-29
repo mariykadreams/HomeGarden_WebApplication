@@ -16,7 +16,6 @@ namespace KursovaHomeGarden.Models
 
         public string? note { get; set; }
 
-        public ICollection<ActionFrequency> ActionFrequencies { get; set; }
 
     }
 }

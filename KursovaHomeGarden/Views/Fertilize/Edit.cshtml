@@ -1,0 +1,103 @@
+﻿@model KursovaHomeGarden.Models.Fertilize
+
+@{
+    ViewData["Title"] = "Edit Fertilizer";
+}
+
+<div class="row">
+    <div class="col-md-8 mx-auto rounded border p-3">
+        <h2 class="text-center mb-5">Edit Fertilizer</h2>
+
+        <form method="post" enctype="multipart/form-data" id="fertilize-form">
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Id</label>
+                <div class="col-sm-8">
+                    <input class="form-control" readonly value="@Model.Fert_type_id">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Type Name</label>
+                <div class="col-sm-8">
+                    <input class="form-control" asp-for="type_name" value="@Model.type_name">
+                    <span asp-validation-for="type_name" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Units</label>
+                <div class="col-sm-8">
+                    <input class="form-control" asp-for="units" value="@Model.units">
+                    <span asp-validation-for="units" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Note</label>
+                <div class="col-sm-8">
+                    <textarea class="form-control" asp-for="note">@Model.note</textarea>
+                    <span asp-validation-for="note" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="offset-sm-4 col-sm-4 d-grid">
+                    <button type="submit" class="btn btn-primary" id="submit-button">Save Changes</button>
+                </div>
+                <div class="col-sm-4 d-grid">
+                    <a class="btn btn-outline-primary" id="cancel-button" asp-controller="Fertilize" asp-action="Index" role="button">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let cancelButton = document.getElementById("cancel-button");
+        let submitButton = document.getElementById("submit-button");
+        let form = document.getElementById("fertilize-form");
+
+        cancelButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to revert this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, leave!",
+                cancelButtonText: "No, stay!",
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '@Url.Action("Index", "Fertilize")';
+                }
+            });
+        });
+
+        submitButton.addEventListener("click", function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: "Save changes?",
+                text: "Are you sure you want to save the changes to this fertilizer?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Yes, save!",
+                cancelButtonText: "No, cancel!",
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>

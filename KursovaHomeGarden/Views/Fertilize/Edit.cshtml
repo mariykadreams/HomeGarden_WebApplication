@@ -8,7 +8,15 @@
     <div class="col-md-8 mx-auto rounded border p-3">
         <h2 class="text-center mb-5">Edit Fertilizer</h2>
 
-        <form method="post" enctype="multipart/form-data" id="fertilize-form">
+        @if (ViewBag.Message != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Message</div>
+        }
+
+        <form asp-action="Edit" asp-controller="Fertilize" asp-route-id="@Model.Fert_type_id" method="post" id="fertilize-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Fert_type_id" />
+
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Id</label>
                 <div class="col-sm-8">
@@ -19,7 +27,7 @@
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Type Name</label>
                 <div class="col-sm-8">
-                    <input class="form-control" asp-for="type_name" value="@Model.type_name">
+                    <input class="form-control" asp-for="type_name">
                     <span asp-validation-for="type_name" class="text-danger"></span>
                 </div>
             </div>
@@ -27,7 +35,7 @@
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Units</label>
                 <div class="col-sm-8">
-                    <input class="form-control" asp-for="units" value="@Model.units">
+                    <input class="form-control" asp-for="units">
                     <span asp-validation-for="units" class="text-danger"></span>
                 </div>
             </div>
@@ -35,7 +43,7 @@
             <div class="row mb-3">
                 <label class="col-sm-4 col-form-label">Note</label>
                 <div class="col-sm-8">
-                    <textarea class="form-control" asp-for="note">@Model.note</textarea>
+                    <textarea class="form-control" asp-for="note"></textarea>
                     <span asp-validation-for="note" class="text-danger"></span>
                 </div>
             </div>
@@ -52,52 +60,58 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let cancelButton = document.getElementById("cancel-button");
-        let submitButton = document.getElementById("submit-button");
-        let form = document.getElementById("fertilize-form");
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 
-        cancelButton.addEventListener("click", function (e) {
-            e.preventDefault();
-            Swal.fire({
-                title: "Are you sure?",
-                text: "You won't be able to revert this!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonText: "Yes, leave!",
-                cancelButtonText: "No, stay!",
-                customClass: {
-                    confirmButton: 'btn btn-primary me-2',
-                    cancelButton: 'btn btn-danger'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '@Url.Action("Index", "Fertilize")';
-                }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let cancelButton = document.getElementById("cancel-button");
+            let submitButton = document.getElementById("submit-button");
+            let form = document.getElementById("fertilize-form");
+
+            cancelButton.addEventListener("click", function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to revert this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, leave!",
+                    cancelButtonText: "No, stay!",
+                    customClass: {
+                        confirmButton: 'btn btn-primary me-2',
+                        cancelButton: 'btn btn-danger'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '@Url.Action("Index", "Fertilize")';
+                    }
+                });
+            });
+
+            submitButton.addEventListener("click", function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: "Save changes?",
+                    text: "Are you sure you want to save the changes to this fertilizer?",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, save!",
+                    cancelButtonText: "No, cancel!",
+                    customClass: {
+                        confirmButton: 'btn btn-primary me-2',
+                        cancelButton: 'btn btn-danger'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
             });
         });
-
-        submitButton.addEventListener("click", function (e) {
-            e.preventDefault();
-            Swal.fire({
-                title: "Save changes?",
-                text: "Are you sure you want to save the changes to this fertilizer?",
-                icon: "question",
-                showCancelButton: true,
-                confirmButtonText: "Yes, save!",
-                cancelButtonText: "No, cancel!",
-                customClass: {
-                    confirmButton: 'btn btn-primary me-2',
-                    cancelButton: 'btn btn-danger'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-        });
-    });
-</script>
+    </script>
+}

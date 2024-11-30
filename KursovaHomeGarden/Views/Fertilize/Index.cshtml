@@ -1,91 +1,125 @@
 ﻿@model List<KursovaHomeGarden.Models.Fertilize>
+@Html.AntiForgeryToken()
 
 @{
     ViewBag.Title = "Fertilizer Management";
 }
-
 <h2 class="text-center mb-5">Fertilizer List</h2>
 
 <div class="mb-4">
     <a class="btn btn-primary" asp-action="Create">Add New Fertilizer</a>
 </div>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 @if (ViewBag.Message != null)
 {
-    <div class="alert alert-danger">@ViewBag.Message</div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @ViewBag.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
 
 @if (Model != null && Model.Count > 0)
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Type Name</th>
-                <th>Units</th>
-                <th>Note</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var fertilize in Model)
-            {
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
                 <tr>
-                    <td>@fertilize.Fert_type_id</td>
-                    <td>@fertilize.type_name</td>
-                    <td>@fertilize.units</td>
-                    <td>@fertilize.note</td>
-                    <td>
-                        <a href="@Url.Action("Edit", "Fertilize", new { id = fertilize.Fert_type_id })" class="btn btn-warning btn-sm">Edit</a>
-                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(@fertilize.Fert_type_id)">Delete</button>
-                    </td>
+                    <th>ID</th>
+                    <th>Type Name</th>
+                    <th>Units</th>
+                    <th>Note</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var fertilize in Model)
+                {
+                    <tr>
+                        <td>@fertilize.Fert_type_id</td>
+                        <td>@fertilize.type_name</td>
+                        <td>@fertilize.units</td>
+                        <td>@fertilize.note</td>
+                        <td>
+                            <a href="@Url.Action("Edit", "Fertilize", new { id = fertilize.Fert_type_id })" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDelete(@fertilize.Fert_type_id)">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 else
 {
-    <p>No fertilizers found.</p>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No fertilizers found.
+    </div>
 }
 
-<script type="text/javascript">
-    function confirmDelete(fertTypeId) {
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, delete it!",
-            cancelButtonText: "Cancel",
-            customClass: {
-                confirmButton: 'btn btn-primary me-2',
-                cancelButton: 'btn btn-danger'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: '/Fertilize/Delete/' + fertTypeId,
-                    type: 'POST',
-                    success: function (response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: 'Deleted!',
-                                text: 'Your fertilizer has been deleted.',
-                                icon: 'success',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary'
-                                },
-                                buttonsStyling: false
-                            });
-                            setTimeout(function () {
-                                location.reload();
-                            }, 1000);
-                        } else {
+@section Scripts {
+    <script type="text/javascript">
+        function confirmDelete(fertTypeId) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to revert this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete it!",
+                cancelButtonText: "Cancel",
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Fertilize")/' + fertTypeId,
+                        type: 'POST',
+                        headers: {
+                            RequestVerificationToken: $('input:hidden[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'Deleted!',
+                                    text: 'Your fertilizer has been deleted.',
+                                    icon: 'success',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: response.message,
+                                    icon: 'error',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
                             Swal.fire({
                                 title: 'Error!',
-                                text: response.message,
+                                text: 'Something went wrong.',
                                 icon: 'error',
                                 customClass: {
                                     confirmButton: 'btn btn-primary'
@@ -93,20 +127,15 @@ else
                                 buttonsStyling: false
                             });
                         }
-                    },
-                    error: function (xhr, status, error) {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Something went wrong.',
-                            icon: 'error',
-                            customClass: {
-                                confirmButton: 'btn btn-primary'
-                            },
-                            buttonsStyling: false
-                        });
-                    }
-                });
-            }
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            setTimeout(function () {
+                $('.alert').alert('close');
+            }, 5000);
         });
-    }
-</script>
+    </script>
+}

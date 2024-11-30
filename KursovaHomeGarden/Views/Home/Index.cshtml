@@ -1,51 +1,20 @@
 ﻿@model IEnumerable<KursovaHomeGarden.Models.Plant.Plant>
 
-
-<div class="row pb-3">
-    @foreach (var plant in Model)
-    {
-        <div class="col-lg-3 col-sm-6">
-            <div class="row p-2">
-                <div class="col-12 p-1">
-                    <div class="card border-0 p-3 shadow border-top border-5 rounded">
-                        @if (!string.IsNullOrEmpty(plant.img))
-                        {
-                            <img src="/images/plants/@plant.img" alt="@plant.name" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" />
-                        }
-                        else
-                        {
-                            <div style="width: 100%; height: 200px; background-color: #f0f0f0; border-radius: 8px;"></div>
-                        }
-                        <div class="pl-1">
-                            <p class="card-title h5 text-dark opacity-75 text-uppercase text-center mt-2">@plant.name</p>
-                            <p class="card-title text-warning text-center">Category: <b>@plant.Category?.category_name</b></p>
-                        </div>
-                        <div class="pl-1">
-                            <p class="text-dark opacity-75 text-center mb-0">
-                                Price: <span>@plant.price.ToString("c")</span>
-                            </p>
-                        </div>
-                        <div class="pl-1">
-                            <p class="text-dark opacity-75 text-center description-text">
-                                @if (!string.IsNullOrEmpty(plant.description) && plant.description.Length > 100)
-                                {
-                                    <span>@plant.description.Substring(0, 100)...</span>
-                                }
-                                else
-                                {
-                                    <span>@plant.description</span>
-                                }
-                            </p>
-                        </div>
-                        <div>
-                            <a asp-action="Details" asp-route-id="@plant.plant_id" class="btn btn-primary bg-gradient border-0 form-control">
-                                Details
-                            </a>
-                        </div>
-                    </div>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    @await Html.PartialAsync("_FilterForm", Model)
                 </div>
             </div>
         </div>
-    }
-</div>
+    </div>
 
+    <div class="row pb-3">
+        @foreach (var plant in Model)
+        {
+            @await Html.PartialAsync("_PlantCard", plant)
+        }
+    </div>
+</div>

@@ -7,6 +7,8 @@ using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Text;
+using KursovaHomeGarden.Services;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -14,11 +16,40 @@ namespace KursovaHomeGarden.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly string _connectionString;
+        private readonly IPlantService _plantService;
 
-        public HomeController(ILogger<HomeController> logger, IConfiguration configuration)
+        public HomeController(ILogger<HomeController> logger, IConfiguration configuration, IPlantService plantService)
         {
             _logger = logger;
             _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
+            _plantService = plantService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Index(string searchTerm, decimal? minPrice, decimal? maxPrice,
+            int? categoryId, int? careLevelId, string sortBy)
+        {
+            try
+            {
+                var (plants, categories, careLevels) = await _plantService.GetFilteredPlantsAsync(
+                    searchTerm, minPrice, maxPrice, categoryId, careLevelId, sortBy);
+
+                ViewBag.Categories = categories;
+                ViewBag.CareLevels = careLevels;
+                ViewBag.CurrentSearchTerm = searchTerm;
+                ViewBag.CurrentMinPrice = minPrice;
+                ViewBag.CurrentMaxPrice = maxPrice;
+                ViewBag.CurrentCategoryId = categoryId;
+                ViewBag.CurrentCareLevelId = careLevelId;
+                ViewBag.CurrentSortBy = sortBy;
+
+                return View(plants);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving plants: {ex.Message}");
+                return View( new KursovaHomeGarden.Models.Plant.Plant());
+            }
         }
 
         public IActionResult Index()

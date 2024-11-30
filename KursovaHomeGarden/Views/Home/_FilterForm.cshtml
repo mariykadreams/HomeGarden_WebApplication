@@ -1,0 +1,89 @@
+﻿@model IEnumerable<KursovaHomeGarden.Models.Plant.Plant>
+
+<form method="get" class="row g-3">
+    <div class="col-md-4">
+        <label for="searchTerm" class="form-label">Search</label>
+        <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+               value="@ViewBag.CurrentSearchTerm" placeholder="Search plants...">
+    </div>
+
+    <div class="col-md-2">
+        <label for="minPrice" class="form-label">Min Price</label>
+        <input type="number" class="form-control" id="minPrice" name="minPrice"
+               value="@ViewBag.CurrentMinPrice" step="0.01">
+    </div>
+
+    <div class="col-md-2">
+        <label for="maxPrice" class="form-label">Max Price</label>
+        <input type="number" class="form-control" id="maxPrice" name="maxPrice"
+               value="@ViewBag.CurrentMaxPrice" step="0.01">
+    </div>
+
+    <div class="col-md-2">
+        <label for="categoryId" class="form-label">Category</label>
+        <select class="form-select" id="categoryId" name="categoryId">
+            <option value="">All Categories</option>
+            @foreach (var category in ViewBag.Categories)
+            {
+                if (ViewBag.CurrentCategoryId == category.category_id)
+                {
+                    <option value="@category.category_id" selected>@category.category_name</option>
+                }
+                else
+                {
+                    <option value="@category.category_id">@category.category_name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label for="careLevelId" class="form-label">Care Level</label>
+        <select class="form-select" id="careLevelId" name="careLevelId">
+            <option value="">All Care Levels</option>
+            @foreach (var careLevel in ViewBag.CareLevels)
+            {
+                if (ViewBag.CurrentCareLevelId == careLevel.care_level_id)
+                {
+                    <option value="@careLevel.care_level_id" selected>@careLevel.level_name</option>
+                }
+                else
+                {
+                    <option value="@careLevel.care_level_id">@careLevel.level_name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label for="sortBy" class="form-label">Sort By</label>
+        <select class="form-select" id="sortBy" name="sortBy">
+            @{
+                var sortOptions = new Dictionary<string, string>
+            {
+            { "name_asc", "Name (A-Z)" },
+            { "name_desc", "Name (Z-A)" },
+            { "price_asc", "Price (Low-High)" },
+            { "price_desc", "Price (High-Low)" }
+            };
+
+                foreach (var option in sortOptions)
+                {
+                    if (ViewBag.CurrentSortBy == option.Key)
+                    {
+                        <option value="@option.Key" selected>@option.Value</option>
+                    }
+                    else
+                    {
+                        <option value="@option.Key">@option.Value</option>
+                    }
+                }
+            }
+        </select>
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Clear Filters</a>
+    </div>
+</form>

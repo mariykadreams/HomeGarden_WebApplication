@@ -1,5 +1,6 @@
 using KursovaHomeGarden.Areas.Identity.Data;
 using KursovaHomeGarden.Data;
+using KursovaHomeGarden.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<HomeGardenDbContext>()
     .AddDefaultTokenProviders();
+
+builder.Services.AddScoped<IPlantService, PlantService>();
 
 // Add services
 builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();

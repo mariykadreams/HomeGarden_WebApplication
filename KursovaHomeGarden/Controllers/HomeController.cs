@@ -5,6 +5,8 @@ using KursovaHomeGarden.Models.CareLevel;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using Microsoft.Data.SqlClient;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -55,11 +57,164 @@ namespace KursovaHomeGarden.Controllers
                 catch (Exception ex)
                 {
                     _logger.LogError($"Database error: {ex.Message}");
-                    // Return empty list on error instead of throwing
                 }
             }
 
             return View(plants);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddToMyPlants(int plantId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "User not authenticated." });
+            }
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using var transaction = connection.BeginTransaction();
+
+                    try
+                    {
+                        // Check if user has enough money
+                        decimal plantPrice = 0;
+                        decimal userBalance = 0;
+
+                        // Get plant price
+                        using (var command = new SqlCommand(
+                            "SELECT price FROM Plants WHERE plant_id = @plantId",
+                            connection,
+                            transaction))
+                        {
+                            command.Parameters.AddWithValue("@plantId", plantId);
+                            var result = command.ExecuteScalar();
+                            if (result != null)
+                            {
+                                plantPrice = (decimal)result;
+                            }
+                        }
+
+                        // Get user's balance
+                        using (var command = new SqlCommand(
+                            "SELECT AmountOfMoney FROM AspNetUsers WHERE Id = @userId",
+                            connection,
+                            transaction))
+                        {
+                            command.Parameters.AddWithValue("@userId", userId);
+                            var result = command.ExecuteScalar();
+                            if (result != DBNull.Value)
+                            {
+                                userBalance = (decimal)result;
+                            }
+                        }
+
+                        if (userBalance < plantPrice)
+                        {
+                            transaction.Rollback();
+                            return Json(new { success = false, message = "Insufficient funds to purchase this plant." });
+                        }
+
+                        // Update user's balance
+                        using (var command = new SqlCommand(
+                            "UPDATE AspNetUsers SET AmountOfMoney = AmountOfMoney - @price WHERE Id = @userId",
+                            connection,
+                            transaction))
+                        {
+                            command.Parameters.AddWithValue("@price", plantPrice);
+                            command.Parameters.AddWithValue("@userId", userId);
+                            command.ExecuteNonQuery();
+                        }
+
+                        // Add plant to user's collection
+                        using (var command = new SqlCommand(
+                            "INSERT INTO User_Plants (purchase_date, plant_id, user_id) VALUES (@purchaseDate, @plantId, @userId)",
+                            connection,
+                            transaction))
+                        {
+                            command.Parameters.AddWithValue("@purchaseDate", DateTime.Now);
+                            command.Parameters.AddWithValue("@plantId", plantId);
+                            command.Parameters.AddWithValue("@userId", userId);
+                            command.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                        return Json(new { success = true, message = "Plant added to your collection successfully!" });
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error adding plant to user's collection: {ex.Message}");
+                return Json(new { success = false, message = "An error occurred while adding the plant to your collection." });
+            }
+        }
+
+        [Authorize]
+        public IActionResult MyPlants()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userPlants = new List<UserPlant>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                    using var command = new SqlCommand(@"
+                        SELECT up.user_plant_id, up.purchase_date, 
+                               p.plant_id, p.name, p.description, p.price, p.img,
+                               c.category_id, c.category_name
+                        FROM User_Plants up
+                        JOIN Plants p ON up.plant_id = p.plant_id
+                        LEFT JOIN Categories c ON p.category_id = c.category_id
+                        WHERE up.user_id = @userId
+                        ORDER BY up.purchase_date DESC", connection);
+
+                    command.Parameters.AddWithValue("@userId", userId);
+
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        userPlants.Add(new UserPlant
+                        {
+                            user_plant_id = reader.GetInt32(reader.GetOrdinal("user_plant_id")),
+                            purchase_date = reader.GetDateTime(reader.GetOrdinal("purchase_date")),
+                            plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                            Plant = new Plant
+                            {
+                                plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                                name = reader.GetString(reader.GetOrdinal("name")),
+                                description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
+                                price = reader.GetDecimal(reader.GetOrdinal("price")),
+                                img = reader.IsDBNull(reader.GetOrdinal("img")) ? null : reader.GetString(reader.GetOrdinal("img")),
+                                Category = new Category
+                                {
+                                    category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
+                                    category_name = reader.GetString(reader.GetOrdinal("category_name"))
+                                }
+                            }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Database error: {ex.Message}");
+                }
+            }
+
+            return View(userPlants);
         }
 
         public IActionResult Details(int id)
@@ -150,7 +305,6 @@ namespace KursovaHomeGarden.Controllers
 
             return View(plant);
         }
-
 
         public IActionResult Privacy()
         {

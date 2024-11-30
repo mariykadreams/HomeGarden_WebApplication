@@ -83,15 +83,77 @@
                         </div>
                     </div>
 
-                    <div class="row mt-3">
-                        <div class="col-12 col-md-6 pb-1">
-                            <button type="button" disabled class="btn btn-primary bg-gradient w-100 py-2 text-uppercase fw-semibold">
-                                Add to My Plant (Coming Soon...)
-                            </button>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="row mt-3">
+                            <div class="col-12 col-md-6 pb-1">
+                                <button type="button" onclick="addToMyPlants(@Model.plant_id)"
+                                        class="btn btn-primary bg-gradient w-100 py-2 text-uppercase fw-semibold">
+                                    Add to My Plants
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    Please <a href="/Identity/Account/Login">login</a> to add this plant to your collection.
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function addToMyPlants(plantId) {
+            $.ajax({
+                url: '@Url.Action("AddToMyPlants", "Home")',
+                type: 'POST',
+                data: { plantId: plantId },
+                headers: {
+                    RequestVerificationToken: $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonText: 'View My Plants',
+                            showCancelButton: true,
+                            cancelButtonText: 'Continue Shopping'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '@Url.Action("MyPlants", "Home")';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: response.message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function () {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while processing your request.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
+        }
+    </script>
+}
+
+@Html.AntiForgeryToken()

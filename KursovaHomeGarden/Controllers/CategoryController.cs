@@ -2,7 +2,11 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using KursovaHomeGarden.Models.Category;
+using KursovaHomeGarden.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 
+
+[Authorize(Roles = SD.Role_Admin)]
 public class CategoryController : Controller
 {
     private readonly string _connectionString;

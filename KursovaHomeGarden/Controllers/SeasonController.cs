@@ -2,9 +2,13 @@
 using KursovaHomeGarden.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using KursovaHomeGarden.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KursovaHomeGarden.Controllers
 {
+
+    [Authorize(Roles = SD.Role_Admin)]
     public class SeasonController : Controller
     {
         private readonly string _connectionString;

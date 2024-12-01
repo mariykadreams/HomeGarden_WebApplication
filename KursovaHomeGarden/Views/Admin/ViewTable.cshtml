@@ -58,6 +58,7 @@ else
 
 <script type="text/javascript">
     function confirmDelete(userId) {
+        console.log("Function called for userId:", userId); // Отладочный вывод
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -72,6 +73,7 @@ else
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
+                console.log("Confirmed deletion for userId:", userId); // Отладочный вывод
                 $.ajax({
                     url: '/User/Delete/' + userId,
                     type: 'POST',
@@ -79,7 +81,7 @@ else
                         if (response.success) {
                             Swal.fire({
                                 title: 'Deleted!',
-                                text: 'Your user has been deleted.',
+                                text: 'The user and all associated data have been deleted.',
                                 icon: 'success',
                                 customClass: {
                                     confirmButton: 'btn btn-primary'
@@ -116,4 +118,6 @@ else
             }
         });
     }
+
+
 </script>

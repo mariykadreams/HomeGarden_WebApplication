@@ -1,4 +1,6 @@
-﻿using KursovaHomeGarden.Models.Plant;
+﻿using KursovaHomeGarden.Areas.Identity.Data;
+using KursovaHomeGarden.Models.Plant;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +10,7 @@ using System.Dynamic;
 
 namespace KursovaHomeGarden.Controllers
 {
+    [Authorize(Roles = SD.Role_Admin)]
     public class AdminController : Controller
     {
         private readonly string _connectionString;
@@ -194,6 +197,45 @@ namespace KursovaHomeGarden.Controllers
             return View(users);
         }
 
+        [HttpPost]
+        public JsonResult Delete(int id)
+        {
+            string connectionString = _connectionString; // Укажите строку подключения к вашей базе данных
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    // Проверяем существование пользователя
+                    string checkUserQuery = "SELECT COUNT(1) FROM Users WHERE UserId = @UserId";
+                    using (SqlCommand checkCommand = new SqlCommand(checkUserQuery, connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@UserId", id);
+
+                        int userExists = (int)checkCommand.ExecuteScalar();
+                        if (userExists == 0)
+                        {
+                            return Json(new { success = false, message = "User not found." });
+                        }
+                    }
+
+                    string deleteUserQuery = "DELETE FROM Users WHERE UserId = @UserId";
+                    using (SqlCommand deleteCommand = new SqlCommand(deleteUserQuery, connection))
+                    {
+                        deleteCommand.Parameters.AddWithValue("@UserId", id);
+                        deleteCommand.ExecuteNonQuery();
+                    }
+
+                    return Json(new { success = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
 
     }
 }

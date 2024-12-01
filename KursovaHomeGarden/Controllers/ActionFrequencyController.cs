@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using KursovaHomeGarden.Models;
 using KursovaHomeGarden.Models.Plant;
+using KursovaHomeGarden.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KursovaHomeGarden.Controllers
 {
+    [Authorize(Roles = SD.Role_Admin)]
     public class ActionFrequencyController : Controller
     {
         private readonly string _connectionString;

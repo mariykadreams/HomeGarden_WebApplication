@@ -2,9 +2,13 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
 using KursovaHomeGarden.Models.CareLevel;
+using KursovaHomeGarden.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KursovaHomeGarden.Controllers
 {
+
+    [Authorize(Roles = SD.Role_Admin)]
     public class CareLevelController : Controller
     {
         private readonly string _connectionString;

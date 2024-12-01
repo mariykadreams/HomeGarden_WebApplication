@@ -2,7 +2,10 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using KursovaHomeGarden.Models;
+using KursovaHomeGarden.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 
+[Authorize(Roles = SD.Role_Admin)]
 public class FertilizeController : Controller
 {
     private readonly string _connectionString;

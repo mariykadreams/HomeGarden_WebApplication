@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using KursovaHomeGarden.Models;
+using KursovaHomeGarden.Areas.Identity.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KursovaHomeGarden.Controllers
 {
+    [Authorize(Roles = SD.Role_Admin)]
     public class SunlightRequirementController : Controller
     {
+
         private readonly string _connectionString;
 
         public SunlightRequirementController(IConfiguration configuration)

@@ -1,0 +1,119 @@
+﻿@model List<dynamic>
+
+@{
+    ViewData["Title"] = "User List";
+}
+
+<h2 class="text-center mb-5">@ViewData["Title"]</h2>
+
+
+@if (ViewData["Message"] != null)
+{
+    <div class="alert alert-danger">@ViewData["Message"]</div>
+}
+
+@if (Model != null && Model.Count > 0)
+{
+    <div class="overflow-x-auto bg-white shadow-md rounded-lg">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>User Name</th>
+                    <th>Amount of Money</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.UserId</td>
+                        <td>@user.UserName</td>
+                        <td>
+                            @if (user.AmountOfMoney == null)
+                            {
+                                <span>N/A</span>
+                            }
+                            else
+                            {
+                                <span>@string.Format("{0:C}", user.AmountOfMoney)</span>
+                            }
+                        </td>
+                        <td>@user.RoleName</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDelete(@user.UserId)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p>No users found.</p>
+}
+
+<script type="text/javascript">
+    function confirmDelete(userId) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "Cancel",
+            customClass: {
+                confirmButton: 'btn btn-primary me-2',
+                cancelButton: 'btn btn-danger'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/User/Delete/' + userId,
+                    type: 'POST',
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: 'Your user has been deleted.',
+                                icon: 'success',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                            setTimeout(function () {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message,
+                                icon: 'error',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Something went wrong.',
+                            icon: 'error',
+                            customClass: {
+                                confirmButton: 'btn btn-primary'
+                            },
+                            buttonsStyling: false
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>

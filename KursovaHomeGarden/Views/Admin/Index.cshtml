@@ -4,6 +4,12 @@
 
 <h1>@ViewData["Title"]</h1>
 
+<nav class="nav flex-column">
+    <a class="nav-link" href="@Url.Action("Users", "Admin")">Manage Users</a>
+    <a class="nav-link" href="@Url.Action("ViewTable", "Admin")">Database Views</a>
+</nav>
+
+
 <button id="loadTableBtn" class="btn btn-primary">Load Action Frequencies</button>
 
 <div id="tableContainer"></div>

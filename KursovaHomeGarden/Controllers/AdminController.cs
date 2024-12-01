@@ -150,5 +150,50 @@ namespace KursovaHomeGarden.Controllers
 
             return PartialView("_PlantActionFrequenciesTable", actionFrequencies);
         }
+
+
+        public IActionResult ViewTable()
+        {
+            var users = new List<dynamic>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+            SELECT 
+                u.Id AS UserId,
+                u.UserName AS UserName,
+                u.AmountOfMoney,
+                r.Name AS RoleName
+            FROM AspNetUsers u
+            LEFT JOIN AspNetUserRoles ur ON u.Id = ur.UserId
+            LEFT JOIN AspNetRoles r ON ur.RoleId = r.Id
+            ORDER BY u.UserName";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            dynamic user = new ExpandoObject();
+                            user.UserId = reader.GetString(reader.GetOrdinal("UserId")); 
+                            user.UserName = reader.GetString(reader.GetOrdinal("UserName"));
+                            user.AmountOfMoney = reader.IsDBNull(reader.GetOrdinal("AmountOfMoney"))
+                                                 ? (decimal?)null
+                                                 : reader.GetDecimal(reader.GetOrdinal("AmountOfMoney"));
+                            user.RoleName = reader.IsDBNull(reader.GetOrdinal("RoleName"))
+                                            ? "No Associated Role"
+                                            : reader.GetString(reader.GetOrdinal("RoleName"));
+                            users.Add(user);
+                        }
+                    }
+                }
+            }
+
+            return View(users);
+        }
+
+
     }
 }

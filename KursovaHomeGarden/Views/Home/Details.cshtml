@@ -1,4 +1,5 @@
-﻿@model KursovaHomeGarden.Models.Plant.Plant
+﻿@using KursovaHomeGarden.Areas.Identity.Data
+@model KursovaHomeGarden.Models.Plant.Plant
 
 <div class="card shadow border-0 mt-4">
     <div class="card-header bg-secondary bg-gradient text-light py-4">
@@ -85,14 +86,30 @@
 
                     @if (User.Identity.IsAuthenticated)
                     {
-                        <div class="row mt-3">
-                            <div class="col-12 col-md-6 pb-1">
-                                <button type="button" onclick="addToMyPlants(@Model.plant_id)"
-                                        class="btn btn-primary bg-gradient w-100 py-2 text-uppercase fw-semibold">
-                                    Add to My Plants
-                                </button>
-                            </div>
-                        </div>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @if (!User.IsInRole(SD.Role_Admin))
+                            {
+                                <div class="row mt-3">
+                                    <div class="col-12 col-md-6 pb-1">
+                                        <button type="button" onclick="addToMyPlants(@Model.plant_id)"
+                                                class="btn btn-primary bg-gradient w-100 py-2 text-uppercase fw-semibold">
+                                            Add to My Plants
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            As an admin, you cannot add plants to your collection.
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
                     }
                     else
                     {

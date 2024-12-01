@@ -11,6 +11,24 @@ namespace KursovaHomeGarden.Services
         private readonly string _connectionString;
         private readonly ILogger<PlantService> _logger;
 
+        private static class PlantQueries
+        {
+            public const string GetCategories = "SELECT category_id, category_name FROM Categories";
+            public const string GetCareLevels = "SELECT care_level_id, level_name FROM CareLevels";
+            public const string GetPlantPrice = "SELECT price FROM Plants WHERE plant_id = @plantId";
+            public const string GetUserBalance = "SELECT AmountOfMoney FROM AspNetUsers WHERE Id = @userId";
+            public const string UpdateUserBalance = "UPDATE AspNetUsers SET AmountOfMoney = AmountOfMoney - @price WHERE Id = @userId";
+            public const string AddPlantToUser = "INSERT INTO User_Plants (purchase_date, plant_id, user_id) VALUES (@purchaseDate, @plantId, @userId)";
+            public const string GetFilteredPlants = @"
+                SELECT p.plant_id, p.name, p.description, p.price, p.img,
+                       c.category_id, c.category_name,
+                       cl.care_level_id, cl.level_name
+                FROM Plants p
+                LEFT JOIN Categories c ON p.category_id = c.category_id
+                LEFT JOIN CareLevels cl ON p.care_level_id = cl.care_level_id
+                WHERE 1=1";
+        }
+
         public PlantService(IConfiguration configuration, ILogger<PlantService> logger)
         {
             _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
@@ -28,7 +46,7 @@ namespace KursovaHomeGarden.Services
             await connection.OpenAsync();
 
             // Get categories
-            using (var command = new SqlCommand("SELECT category_id, category_name FROM Categories", connection))
+            using (var command = new SqlCommand(PlantQueries.GetCategories, connection))
             {
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -42,7 +60,7 @@ namespace KursovaHomeGarden.Services
             }
 
             // Get care levels
-            using (var command = new SqlCommand("SELECT care_level_id, level_name FROM CareLevels", connection))
+            using (var command = new SqlCommand(PlantQueries.GetCareLevels, connection))
             {
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -56,20 +74,13 @@ namespace KursovaHomeGarden.Services
             }
 
             // Build main query
-            var queryBuilder = new StringBuilder(@"
-                SELECT p.plant_id, p.name, p.description, p.price, p.img,
-                       c.category_id, c.category_name,
-                       cl.care_level_id, cl.level_name
-                FROM Plants p
-                LEFT JOIN Categories c ON p.category_id = c.category_id
-                LEFT JOIN CareLevels cl ON p.care_level_id = cl.care_level_id
-                WHERE 1=1");
-
+            var queryBuilder = new StringBuilder(PlantQueries.GetFilteredPlants);
             var parameters = new List<SqlParameter>();
 
+            // Modified to search only by plant name
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                queryBuilder.Append(" AND (p.name LIKE @searchTerm OR p.description LIKE @searchTerm)");
+                queryBuilder.Append(" AND p.name LIKE @searchTerm");
                 parameters.Add(new SqlParameter("@searchTerm", $"%{searchTerm}%"));
             }
 
@@ -141,10 +152,7 @@ namespace KursovaHomeGarden.Services
                 decimal userBalance = 0;
 
                 // Get plant price
-                using (var command = new SqlCommand(
-                    "SELECT price FROM Plants WHERE plant_id = @plantId",
-                    connection,
-                    transaction))
+                using (var command = new SqlCommand(PlantQueries.GetPlantPrice, connection, transaction))
                 {
                     command.Parameters.AddWithValue("@plantId", plantId);
                     var result = await command.ExecuteScalarAsync();
@@ -155,10 +163,7 @@ namespace KursovaHomeGarden.Services
                 }
 
                 // Get user balance
-                using (var command = new SqlCommand(
-                    "SELECT AmountOfMoney FROM AspNetUsers WHERE Id = @userId",
-                    connection,
-                    transaction))
+                using (var command = new SqlCommand(PlantQueries.GetUserBalance, connection, transaction))
                 {
                     command.Parameters.AddWithValue("@userId", userId);
                     var result = await command.ExecuteScalarAsync();
@@ -174,10 +179,7 @@ namespace KursovaHomeGarden.Services
                 }
 
                 // Update user balance
-                using (var command = new SqlCommand(
-                    "UPDATE AspNetUsers SET AmountOfMoney = AmountOfMoney - @price WHERE Id = @userId",
-                    connection,
-                    transaction))
+                using (var command = new SqlCommand(PlantQueries.UpdateUserBalance, connection, transaction))
                 {
                     command.Parameters.AddWithValue("@price", plantPrice);
                     command.Parameters.AddWithValue("@userId", userId);
@@ -185,10 +187,7 @@ namespace KursovaHomeGarden.Services
                 }
 
                 // Add plant to user's collection
-                using (var command = new SqlCommand(
-                    "INSERT INTO User_Plants (purchase_date, plant_id, user_id) VALUES (@purchaseDate, @plantId, @userId)",
-                    connection,
-                    transaction))
+                using (var command = new SqlCommand(PlantQueries.AddPlantToUser, connection, transaction))
                 {
                     command.Parameters.AddWithValue("@purchaseDate", DateTime.Now);
                     command.Parameters.AddWithValue("@plantId", plantId);

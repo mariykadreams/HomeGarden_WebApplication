@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text;
 using KursovaHomeGarden.Services;
+using KursovaHomeGarden.Areas.Identity.Data;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -97,6 +98,7 @@ namespace KursovaHomeGarden.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = SD.Role_User)]
         public IActionResult AddToMyPlants(int plantId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -193,6 +195,7 @@ namespace KursovaHomeGarden.Controllers
         }
 
         [Authorize]
+
         public IActionResult MyPlants()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

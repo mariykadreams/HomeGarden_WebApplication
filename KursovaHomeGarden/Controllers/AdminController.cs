@@ -198,42 +198,62 @@ namespace KursovaHomeGarden.Controllers
         }
 
         [HttpPost]
-        public JsonResult Delete(int id)
+        public JsonResult Delete(string id)
         {
-            string connectionString = _connectionString; // Укажите строку подключения к вашей базе данных
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (currentUserId == id)
+            {
+                return Json(new { success = false, message = "You cannot delete your own account!" });
+            }
 
             try
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
-
-                    // Проверяем существование пользователя
-                    string checkUserQuery = "SELECT COUNT(1) FROM Users WHERE UserId = @UserId";
-                    using (SqlCommand checkCommand = new SqlCommand(checkUserQuery, connection))
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        checkCommand.Parameters.AddWithValue("@UserId", id);
-
-                        int userExists = (int)checkCommand.ExecuteScalar();
-                        if (userExists == 0)
+                        try
                         {
-                            return Json(new { success = false, message = "User not found." });
+                            // Delete from User_Plants
+                            string deleteUserPlantsQuery = "DELETE FROM User_Plants WHERE user_id = @UserId";
+                            using (SqlCommand cmd = new SqlCommand(deleteUserPlantsQuery, connection, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@UserId", id);
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            // Delete from AspNetUserRoles
+                            string deleteUserRolesQuery = "DELETE FROM AspNetUserRoles WHERE UserId = @UserId";
+                            using (SqlCommand cmd = new SqlCommand(deleteUserRolesQuery, connection, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@UserId", id);
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            // Finally delete from AspNetUsers
+                            string deleteUserQuery = "DELETE FROM AspNetUsers WHERE Id = @UserId";
+                            using (SqlCommand cmd = new SqlCommand(deleteUserQuery, connection, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@UserId", id);
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                            return Json(new { success = true, message = "User and all related data deleted successfully." });
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            return Json(new { success = false, message = $"Error during deletion: {ex.Message}" });
                         }
                     }
-
-                    string deleteUserQuery = "DELETE FROM Users WHERE UserId = @UserId";
-                    using (SqlCommand deleteCommand = new SqlCommand(deleteUserQuery, connection))
-                    {
-                        deleteCommand.Parameters.AddWithValue("@UserId", id);
-                        deleteCommand.ExecuteNonQuery();
-                    }
-
-                    return Json(new { success = true });
                 }
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new { success = false, message = $"Database connection error: {ex.Message}" });
             }
         }
 

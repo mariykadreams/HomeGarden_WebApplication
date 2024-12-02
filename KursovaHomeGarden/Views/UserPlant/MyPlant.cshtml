@@ -1,0 +1,137 @@
+﻿@model List<KursovaHomeGarden.Models.UserPlant>
+
+<div class="container py-5">
+    <h1 class="text-center mb-5">My Plants Collection</h1>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            <h4>Your plant collection is empty!</h4>
+            <p class="mb-0">Start adding plants to your collection from our <a href="@Url.Action("Index", "Home")">catalog</a>.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var userPlant in Model)
+            {
+                <div class="col-lg-3 col-sm-6">
+                    <div class="row p-2">
+                        <div class="col-12 p-1">
+                            <div class="card border-0 p-3 shadow border-top border-5 rounded">
+                                @if (!string.IsNullOrEmpty(userPlant.Plant.img))
+                                {
+                                    <img src="/images/plants/@userPlant.Plant.img" alt="@userPlant.Plant.name"
+                                         style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px;" />
+                                }
+                                else
+                                {
+                                    <div style="width: 100%; height: 200px; background-color: #f0f0f0; border-radius: 8px;"></div>
+                                }
+                                <div class="pl-1">
+                                    <p class="card-title h5 text-dark opacity-75 text-uppercase text-center mt-2">@userPlant.Plant.name</p>
+                                    <p class="card-title text-warning text-center">
+                                        Category: <b>@userPlant.Plant.Category?.category_name</b>
+                                    </p>
+                                    <p class="card-title text-info text-center">
+                                        Added: <b>@userPlant.purchase_date.ToString("MMMM dd, yyyy")</b>
+                                    </p>
+                                </div>
+                                <div class="pl-1">
+                                    <p class="text-dark opacity-75 text-center description-text">
+                                        @if (!string.IsNullOrEmpty(userPlant.Plant.description) && userPlant.Plant.description.Length > 100)
+                                        {
+                                            @userPlant.Plant.description.Substring(0, 100)
+                                            <text>...</text>
+                                        }
+                                        else
+                                        {
+                                            @userPlant.Plant.description
+                                        }
+                                    </p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a asp-controller="UserPlant" asp-action="Details" asp-route-id="@userPlant.Plant.plant_id"
+                                       class="btn btn-primary bg-gradient border-0 flex-grow-1">
+                                        Details
+                                    </a>
+                                    <button onclick="deletePlant(@userPlant.user_plant_id, '@userPlant.Plant.name')"
+                                            class="btn btn-danger bg-gradient border-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function deletePlant(userPlantId, plantName) {
+            Swal.fire({
+                title: 'Remove Plant',
+                text: `Are you sure you want to remove ${plantName} from your collection?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, remove it',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    confirmButton: 'btn btn-danger me-2',
+                    cancelButton: 'btn btn-secondary'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("DeletePlant", "UserPlant")',
+                        type: 'POST',
+                        data: { userPlantId: userPlantId },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'Removed!',
+                                    text: `${plantName} has been removed from your collection.`,
+                                    icon: 'success',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: response.message || 'Something went wrong.',
+                                    icon: 'error',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
+                                });
+                            }
+                        },
+                        error: function () {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: 'Something went wrong.',
+                                icon: 'error',
+                                customClass: {
+                                    confirmButton: 'btn btn-primary'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

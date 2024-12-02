@@ -1,5 +1,4 @@
 ﻿using KursovaHomeGarden.Areas.Identity.Data;
-using KursovaHomeGarden.Models.Plant;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -24,7 +23,7 @@ namespace KursovaHomeGarden.Controllers
 
         public IActionResult Index()
         {
-            var plants = new List<Plant>();
+            var plants = new List<dynamic>();
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
@@ -35,11 +34,10 @@ namespace KursovaHomeGarden.Controllers
                     {
                         while (reader.Read())
                         {
-                            plants.Add(new Plant
-                            {
-                                plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
-                                name = reader.GetString(reader.GetOrdinal("name"))
-                            });
+                            dynamic plant = new ExpandoObject();
+                            plant.plant_id = reader.GetInt32(reader.GetOrdinal("plant_id"));
+                            plant.name = reader.GetString(reader.GetOrdinal("name"));
+                            plants.Add(plant);
                         }
                     }
                 }
@@ -47,6 +45,53 @@ namespace KursovaHomeGarden.Controllers
 
             ViewBag.Plants = plants;
             return View();
+        }
+
+        public IActionResult PlantPopularity()
+        {
+            var plantStats = GetPlantPopularityStats();
+            return View(plantStats);
+        }
+
+        private List<dynamic> GetPlantPopularityStats()
+        {
+            var plantStats = new List<dynamic>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT 
+                        p.name AS PlantName,
+                        COUNT(up.plant_id) AS Popularity
+                    FROM 
+                        [KursovaHomeGardenDB].[dbo].[User_Plants] up
+                    INNER JOIN 
+                        [KursovaHomeGardenDB].[dbo].[Plants] p ON up.plant_id = p.plant_id
+                    GROUP BY 
+                        p.name
+                    ORDER BY 
+                        Popularity DESC;
+                    ";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            dynamic plantStat = new ExpandoObject();
+                            plantStat.PlantId = reader.GetInt32(reader.GetOrdinal("plant_id"));
+                            plantStat.Name = reader.GetString(reader.GetOrdinal("name"));
+                            plantStat.UserCount = reader.GetInt32(reader.GetOrdinal("user_count"));
+                            plantStat.Percentage = reader.GetDecimal(reader.GetOrdinal("percentage"));
+                            plantStats.Add(plantStat);
+                        }
+                    }
+                }
+            }
+
+            return plantStats;
         }
 
         [HttpPost]
@@ -154,7 +199,6 @@ namespace KursovaHomeGarden.Controllers
             return PartialView("_PlantActionFrequenciesTable", actionFrequencies);
         }
 
-
         public IActionResult ViewTable()
         {
             var users = new List<dynamic>();
@@ -163,15 +207,15 @@ namespace KursovaHomeGarden.Controllers
             {
                 connection.Open();
                 var query = @"
-            SELECT 
-                u.Id AS UserId,
-                u.UserName AS UserName,
-                u.AmountOfMoney,
-                r.Name AS RoleName
-            FROM AspNetUsers u
-            LEFT JOIN AspNetUserRoles ur ON u.Id = ur.UserId
-            LEFT JOIN AspNetRoles r ON ur.RoleId = r.Id
-            ORDER BY u.UserName";
+                    SELECT 
+                        u.Id AS UserId,
+                        u.UserName AS UserName,
+                        u.AmountOfMoney,
+                        r.Name AS RoleName
+                    FROM AspNetUsers u
+                    LEFT JOIN AspNetUserRoles ur ON u.Id = ur.UserId
+                    LEFT JOIN AspNetRoles r ON ur.RoleId = r.Id
+                    ORDER BY u.UserName";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -180,7 +224,7 @@ namespace KursovaHomeGarden.Controllers
                         while (reader.Read())
                         {
                             dynamic user = new ExpandoObject();
-                            user.UserId = reader.GetString(reader.GetOrdinal("UserId")); 
+                            user.UserId = reader.GetString(reader.GetOrdinal("UserId"));
                             user.UserName = reader.GetString(reader.GetOrdinal("UserName"));
                             user.AmountOfMoney = reader.IsDBNull(reader.GetOrdinal("AmountOfMoney"))
                                                  ? (decimal?)null
@@ -216,7 +260,6 @@ namespace KursovaHomeGarden.Controllers
                     {
                         try
                         {
-                            // Delete from User_Plants
                             string deleteUserPlantsQuery = "DELETE FROM User_Plants WHERE user_id = @UserId";
                             using (SqlCommand cmd = new SqlCommand(deleteUserPlantsQuery, connection, transaction))
                             {
@@ -224,7 +267,6 @@ namespace KursovaHomeGarden.Controllers
                                 cmd.ExecuteNonQuery();
                             }
 
-                            // Delete from AspNetUserRoles
                             string deleteUserRolesQuery = "DELETE FROM AspNetUserRoles WHERE UserId = @UserId";
                             using (SqlCommand cmd = new SqlCommand(deleteUserRolesQuery, connection, transaction))
                             {
@@ -232,7 +274,6 @@ namespace KursovaHomeGarden.Controllers
                                 cmd.ExecuteNonQuery();
                             }
 
-                            // Finally delete from AspNetUsers
                             string deleteUserQuery = "DELETE FROM AspNetUsers WHERE Id = @UserId";
                             using (SqlCommand cmd = new SqlCommand(deleteUserQuery, connection, transaction))
                             {
@@ -256,6 +297,5 @@ namespace KursovaHomeGarden.Controllers
                 return Json(new { success = false, message = $"Database connection error: {ex.Message}" });
             }
         }
-
     }
 }

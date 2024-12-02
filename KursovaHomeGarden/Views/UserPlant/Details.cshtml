@@ -20,7 +20,7 @@
                 </div>
             </div>
 
-            @if (ViewBag.UserOwnsPlant)
+            @if (ViewBag.UserPlant != null)
             {
                 <div class="row mb-4">
                     <div class="col-12">
@@ -29,8 +29,9 @@
                                 <i class="bi bi-check-circle-fill me-2"></i>
                                 <div>
                                     <strong>You already own this plant!</strong>
+                                    <p class="mb-2">Purchased on: @(((UserPlant)ViewBag.UserPlant).purchase_date.ToString("MMMM dd, yyyy"))</p>
                                     <div class="mt-2">
-                                        <a href="@Url.Action("MyPlant", "UserPlant")" class="btn btn-success btn-sm">
+                                        <a href="@Url.Action("MyPlants", "Home")" class="btn btn-success btn-sm">
                                             <i class="bi bi-arrow-right me-1"></i> View in My Plants
                                         </a>
                                     </div>
@@ -61,7 +62,11 @@
 
                     <div class="row">
                         <div class="col-12 pb-4">
-                            <span class="badge bg-info text-uppercase">Care Level: @Model.CareLevel.level_name</span>
+                            <span class="badge bg-info text-uppercase me-2">Care Level: @Model.CareLevel.level_name</span>
+                            @if (Model.SunlightRequirement != null)
+                            {
+                                <span class="badge bg-warning text-uppercase">Sunlight: @Model.SunlightRequirement.light_intensity</span>
+                            }
                         </div>
                     </div>
 
@@ -109,7 +114,7 @@
                     {
                         @if (!User.IsInRole(SD.Role_Admin))
                         {
-                            @if (!ViewBag.UserOwnsPlant)
+                            @if (ViewBag.UserPlant == null)
                             {
                                 <div class="row mt-3">
                                     <div class="col-12 col-md-6 pb-1">
@@ -170,6 +175,9 @@
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 window.location.href = '@Url.Action("MyPlants", "Home")';
+                            } else {
+                                // Reload the page to show the ownership status
+                                window.location.reload();
                             }
                         });
                     } else {

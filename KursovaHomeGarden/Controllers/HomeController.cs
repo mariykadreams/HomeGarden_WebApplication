@@ -196,84 +196,44 @@ namespace KursovaHomeGarden.Controllers
 
         [Authorize]
 
-        public IActionResult MyPlants()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userPlants = new List<UserPlant>();
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                try
-                {
-                    connection.Open();
-                    using var command = new SqlCommand(@"
-                        SELECT up.user_plant_id, up.purchase_date, 
-                               p.plant_id, p.name, p.description, p.price, p.img,
-                               c.category_id, c.category_name
-                        FROM User_Plants up
-                        JOIN Plants p ON up.plant_id = p.plant_id
-                        LEFT JOIN Categories c ON p.category_id = c.category_id
-                        WHERE up.user_id = @userId
-                        ORDER BY up.purchase_date DESC", connection);
-
-                    command.Parameters.AddWithValue("@userId", userId);
-
-                    using var reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        userPlants.Add(new UserPlant
-                        {
-                            user_plant_id = reader.GetInt32(reader.GetOrdinal("user_plant_id")),
-                            purchase_date = reader.GetDateTime(reader.GetOrdinal("purchase_date")),
-                            plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
-                            Plant = new Plant
-                            {
-                                plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
-                                name = reader.GetString(reader.GetOrdinal("name")),
-                                description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
-                                price = reader.GetDecimal(reader.GetOrdinal("price")),
-                                img = reader.IsDBNull(reader.GetOrdinal("img")) ? null : reader.GetString(reader.GetOrdinal("img")),
-                                Category = new Category
-                                {
-                                    category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
-                                    category_name = reader.GetString(reader.GetOrdinal("category_name"))
-                                }
-                            }
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Database error: {ex.Message}");
-                }
-            }
-
-            return View(userPlants);
-        }
 
         public IActionResult Details(int id)
         {
             Plant plant = null;
+            bool userOwnsPlant = false;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             using (var connection = new SqlConnection(_connectionString))
             {
                 try
                 {
                     connection.Open();
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        using (var ownershipCommand = new SqlCommand(
+                            "SELECT COUNT(1) FROM User_Plants WHERE plant_id = @PlantId AND user_id = @UserId",
+                            connection))
+                        {
+                            ownershipCommand.Parameters.AddWithValue("@PlantId", id);
+                            ownershipCommand.Parameters.AddWithValue("@UserId", userId);
+                            userOwnsPlant = ((int)ownershipCommand.ExecuteScalar()) > 0;
+                        }
+                    }
+
                     using var command = new SqlCommand(@"
-                        SELECT p.plant_id, p.name, p.description, p.price, p.img,
-                               c.category_id, c.category_name,
-                               cl.care_level_id, cl.level_name,
-                               af.action_frequency_id, af.Interval, af.volume, af.notes,
-                               s.season_id, s.season_name,
-                               at.action_type_id, at.type_name
-                        FROM Plants p
-                        LEFT JOIN Categories c ON p.category_id = c.category_id
-                        LEFT JOIN CareLevels cl ON p.care_level_id = cl.care_level_id
-                        LEFT JOIN ActionFrequencies af ON p.plant_id = af.plant_id
-                        LEFT JOIN Seasons s ON af.season_id = s.season_id
-                        LEFT JOIN ActionTypes at ON af.action_type_id = at.action_type_id
-                        WHERE p.plant_id = @PlantId", connection);
+                SELECT p.plant_id, p.name, p.description, p.price, p.img,
+                       c.category_id, c.category_name,
+                       cl.care_level_id, cl.level_name,
+                       af.action_frequency_id, af.Interval, af.volume, af.notes,
+                       s.season_id, s.season_name,
+                       at.action_type_id, at.type_name
+                FROM Plants p
+                LEFT JOIN Categories c ON p.category_id = c.category_id
+                LEFT JOIN CareLevels cl ON p.care_level_id = cl.care_level_id
+                LEFT JOIN ActionFrequencies af ON p.plant_id = af.plant_id
+                LEFT JOIN Seasons s ON af.season_id = s.season_id
+                LEFT JOIN ActionTypes at ON af.action_type_id = at.action_type_id
+                WHERE p.plant_id = @PlantId", connection);
 
                     command.Parameters.AddWithValue("@PlantId", id);
 
@@ -337,8 +297,10 @@ namespace KursovaHomeGarden.Controllers
                 return NotFound();
             }
 
+            ViewBag.UserOwnsPlant = userOwnsPlant;
             return View(plant);
         }
+
 
         public IActionResult Privacy()
         {

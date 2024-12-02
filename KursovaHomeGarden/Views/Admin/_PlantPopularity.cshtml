@@ -1,0 +1,47 @@
+﻿@model IEnumerable<dynamic>
+
+@{
+    ViewData["Title"] = "Plant Popularity Statistics";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">@ViewData["Title"]</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Plant Name</th>
+                            <th>Number of Users</th>
+                            <th>Popularity Percentage</th>
+                            <th>Popularity Graph</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plant in Model)
+                        {
+                            <tr>
+                                <td>@plant.Name</td>
+                                <td>@plant.UserCount</td>
+                                <td>@plant.Percentage%</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success"
+                                             role="progressbar"
+                                             style="width: @plant.Percentage%"
+                                             aria-valuenow="@plant.Percentage"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

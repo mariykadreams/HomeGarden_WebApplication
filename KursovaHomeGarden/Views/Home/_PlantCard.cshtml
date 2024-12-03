@@ -1,4 +1,5 @@
 ﻿@model KursovaHomeGarden.Models.Plant.Plant
+@using KursovaHomeGarden.Extensions
 
 <div class="col-lg-3 col-sm-6">
     <div class="row p-2">
@@ -14,7 +15,12 @@
                     <div style="width: 100%; height: 200px; background-color: #f0f0f0; border-radius: 8px;"></div>
                 }
                 <div class="pl-1">
-                    <p class="card-title h5 text-dark opacity-75 text-uppercase text-center mt-2">@Model.name</p>
+                    <p class="card-title h5 text-dark opacity-75 text-uppercase text-center mt-2">
+                        @{
+                            var searchTerm = ViewBag.CurrentSearchTerm as string;
+                            @Html.Raw(StringExtensions.HighlightText(Model.name, searchTerm))
+                        }
+                    </p>
                     <p class="card-title text-warning text-center">
                         Category: <b>@Model.Category?.category_name</b>
                     </p>
@@ -32,7 +38,6 @@
                         @if (!string.IsNullOrEmpty(Model.description) && Model.description.Length > 100)
                         {
                             @Model.description.Substring(0, 100)
-
                             <text>...</text>
                         }
                         else

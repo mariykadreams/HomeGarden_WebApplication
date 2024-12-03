@@ -99,7 +99,6 @@ namespace KursovaHomeGarden.Controllers
                 {
                     connection.Open();
 
-                    // First check if user owns the plant
                     using (var checkOwnershipCommand = new SqlCommand(
                         "SELECT COUNT(1) FROM User_Plants WHERE plant_id = @PlantId AND user_id = @UserId",
                         connection))
@@ -110,12 +109,10 @@ namespace KursovaHomeGarden.Controllers
 
                         if (ownershipCount == 0)
                         {
-                            // User doesn't own this plant, redirect to their plant list
                             return RedirectToAction(nameof(MyPlant));
                         }
                     }
 
-                    // Get user plant details
                     using (var userPlantCommand = new SqlCommand(@"
                         SELECT user_plant_id, purchase_date 
                         FROM User_Plants 
@@ -137,7 +134,6 @@ namespace KursovaHomeGarden.Controllers
                         }
                     }
 
-                    // Get plant details
                     using var plantCommand = new SqlCommand(@"
                         SELECT p.plant_id, p.name, p.description, p.price, p.img,
                                c.category_id, c.category_name,

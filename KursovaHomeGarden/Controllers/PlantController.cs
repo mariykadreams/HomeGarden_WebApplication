@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using KursovaHomeGarden.Areas.Identity.Data;
+using KursovaHomeGarden.Models;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -47,6 +48,7 @@ namespace KursovaHomeGarden.Controllers
         }
 
         [HttpGet]
+        [HttpGet]
         public IActionResult Index()
         {
             List<Plant> plants = new List<Plant>();
@@ -55,13 +57,15 @@ namespace KursovaHomeGarden.Controllers
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     string query = @"
-                        SELECT p.plant_id, p.name, p.description, p.price, 
-                               p.category_id, c.category_name, 
-                               p.care_level_id, cl.level_name,
-                               p.img 
-                        FROM Plants p
-                        JOIN Categories c ON p.category_id = c.category_id
-                        JOIN CareLevels cl ON p.care_level_id = cl.care_level_id";
+                    SELECT p.plant_id, p.name, p.description, p.price, 
+                           p.category_id, c.category_name, 
+                           p.care_level_id, cl.level_name,
+                           p.img,
+                           sr.sunlight_requirements_id, sr.light_intensity, sr.hours_per_day
+                    FROM Plants p
+                    JOIN Categories c ON p.category_id = c.category_id
+                    JOIN CareLevels cl ON p.care_level_id = cl.care_level_id
+                    LEFT JOIN SunlightRequirements sr ON p.sunlight_requirements_id = sr.sunlight_requirements_id";
 
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
@@ -70,7 +74,7 @@ namespace KursovaHomeGarden.Controllers
 
                         while (reader.Read())
                         {
-                            plants.Add(new Plant
+                            var plant = new Plant
                             {
                                 plant_id = (int)reader["plant_id"],
                                 name = reader["name"].ToString(),
@@ -89,7 +93,19 @@ namespace KursovaHomeGarden.Controllers
                                     level_name = reader["level_name"].ToString()
                                 },
                                 img = reader["img"].ToString()
-                            });
+                            };
+
+                            if (!reader.IsDBNull(reader.GetOrdinal("sunlight_requirements_id")))
+                            {
+                                plant.SunlightRequirement = new SunlightRequirement
+                                {
+                                    sunlight_requirements_id = (int)reader["sunlight_requirements_id"],
+                                    light_intensity = reader["light_intensity"].ToString(),
+                                    hours_per_day = (int)reader["hours_per_day"]
+                                };
+                            }
+
+                            plants.Add(plant);
                         }
                     }
                 }
@@ -223,7 +239,10 @@ namespace KursovaHomeGarden.Controllers
                 Plant plant = null;
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    string query = "SELECT * FROM Plants WHERE plant_id = @plant_id";
+                    string query = @"SELECT p.*, sr.sunlight_requirements_id 
+                           FROM Plants p 
+                           LEFT JOIN SunlightRequirements sr ON p.sunlight_requirements_id = sr.sunlight_requirements_id 
+                           WHERE p.plant_id = @plant_id";
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@plant_id", id);
@@ -239,7 +258,8 @@ namespace KursovaHomeGarden.Controllers
                                 price = (decimal)reader["price"],
                                 category_id = (int)reader["category_id"],
                                 care_level_id = (int)reader["care_level_id"],
-                                img = reader["img"] == DBNull.Value ? null : reader["img"].ToString()
+                                img = reader["img"] == DBNull.Value ? null : reader["img"].ToString(),
+                                sunlight_requirements_id = reader["sunlight_requirements_id"] == DBNull.Value ? null : (int?)reader["sunlight_requirements_id"]
                             };
                         }
                     }
@@ -252,6 +272,7 @@ namespace KursovaHomeGarden.Controllers
 
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
+                ViewBag.SunlightRequirements = GetSunlightRequirements();
                 return View(plant);
             }
             catch (Exception ex)
@@ -264,9 +285,6 @@ namespace KursovaHomeGarden.Controllers
         [HttpPost]
         public IActionResult Edit(Plant plant)
         {
-            System.Diagnostics.Debug.WriteLine($"Edit method started");
-            System.Diagnostics.Debug.WriteLine($"Received plant: ID={plant.plant_id}, Name={plant.name}, Price={plant.price}");
-
             if (string.IsNullOrWhiteSpace(plant.name))
             {
                 ModelState.AddModelError("name", "Name is required.");
@@ -276,8 +294,6 @@ namespace KursovaHomeGarden.Controllers
             {
                 ModelState.AddModelError("price", "Price must be greater than 0.");
             }
-
-         
 
             string currentImg = null;
             using (SqlConnection connection = new SqlConnection(_connectionString))
@@ -328,6 +344,7 @@ namespace KursovaHomeGarden.Controllers
             {
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
+                ViewBag.SunlightRequirements = GetSunlightRequirements();
                 return View(plant);
             }
 
@@ -335,9 +352,16 @@ namespace KursovaHomeGarden.Controllers
             {
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    string query = "UPDATE Plants SET name = @name, description = @description, price = @price, " +
-                                  "category_id = @category_id, care_level_id = @care_level_id, img = @img " +
-                                  "WHERE plant_id = @plant_id";
+                    string query = @"UPDATE Plants 
+                          SET name = @name, 
+                              description = @description, 
+                              price = @price, 
+                              category_id = @category_id, 
+                              care_level_id = @care_level_id, 
+                              sunlight_requirements_id = @sunlight_requirements_id,
+                              img = @img 
+                          WHERE plant_id = @plant_id";
+
                     using (SqlCommand command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@plant_id", plant.plant_id);
@@ -346,11 +370,11 @@ namespace KursovaHomeGarden.Controllers
                         command.Parameters.AddWithValue("@price", plant.price);
                         command.Parameters.AddWithValue("@category_id", plant.category_id);
                         command.Parameters.AddWithValue("@care_level_id", plant.care_level_id);
+                        command.Parameters.AddWithValue("@sunlight_requirements_id", plant.sunlight_requirements_id.HasValue ? (object)plant.sunlight_requirements_id.Value : DBNull.Value);
                         command.Parameters.AddWithValue("@img", plant.img ?? (object)DBNull.Value);
 
                         connection.Open();
-                        var rowsAffected = command.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine($"Rows affected: {rowsAffected}");
+                        command.ExecuteNonQuery();
                     }
                 }
 
@@ -358,11 +382,10 @@ namespace KursovaHomeGarden.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error updating plant: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 ViewBag.Message = $"Error: {ex.Message}";
                 ViewBag.Categories = GetCategories();
                 ViewBag.CareLevels = GetCareLevels();
+                ViewBag.SunlightRequirements = GetSunlightRequirements();
                 return View(plant);
             }
         }
@@ -395,7 +418,7 @@ namespace KursovaHomeGarden.Controllers
             List<SelectListItem> careLevels = new List<SelectListItem>();
             using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                string query = "SELECT care_level_id, level_name FROM CareLevels";  // Ensure correct column names
+                string query = "SELECT care_level_id, level_name FROM CareLevels";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     connection.Open();
@@ -405,7 +428,7 @@ namespace KursovaHomeGarden.Controllers
                         careLevels.Add(new SelectListItem
                         {
                             Value = reader["care_level_id"].ToString(),
-                            Text = reader["level_name"].ToString()  // Make sure 'level_name' is correct
+                            Text = reader["level_name"].ToString()  
                         });
                     }
                 }

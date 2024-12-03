@@ -1,6 +1,8 @@
 ﻿@model IEnumerable<KursovaHomeGarden.Models.Plant.Plant>
 
-<form method="get" class="row g-3">
+<div id="errorMessages" class="alert alert-danger" style="display: none;"></div>
+
+<form method="get" class="row g-3" id="filterForm">
     <div class="col-md-4">
         <label for="searchTerm" class="form-label">Search</label>
         <input type="text" class="form-control" id="searchTerm" name="searchTerm"
@@ -10,13 +12,13 @@
     <div class="col-md-2">
         <label for="minPrice" class="form-label">Min Price</label>
         <input type="number" class="form-control" id="minPrice" name="minPrice"
-               value="@ViewBag.CurrentMinPrice" step="0.01">
+               value="@ViewBag.CurrentMinPrice" step="0.01" min="0">
     </div>
 
     <div class="col-md-2">
         <label for="maxPrice" class="form-label">Max Price</label>
         <input type="number" class="form-control" id="maxPrice" name="maxPrice"
-               value="@ViewBag.CurrentMaxPrice" step="0.01">
+               value="@ViewBag.CurrentMaxPrice" step="0.01" min="0">
     </div>
 
     <div class="col-md-2">
@@ -87,3 +89,33 @@
         <a href="@Url.Action("Index")" class="btn btn-secondary">Clear Filters</a>
     </div>
 </form>
+
+<script>
+    document.getElementById('filterForm').addEventListener('submit', function (e) {
+        const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+        const maxPrice = parseFloat(document.getElementById('maxPrice').value) || 0;
+        const errorMessages = [];
+        const errorDiv = document.getElementById('errorMessages');
+
+        if (minPrice < 0) {
+            errorMessages.push('Minimum price cannot be less than 0');
+        }
+
+        if (maxPrice < 0) {
+            errorMessages.push('Maximum price cannot be less than 0');
+        }
+
+        if (maxPrice > 0 && minPrice > maxPrice) {
+            errorMessages.push('Minimum price cannot be greater than maximum price');
+        }
+
+        if (errorMessages.length > 0) {
+            e.preventDefault();
+            errorDiv.innerHTML = errorMessages.join('<br>');
+            errorDiv.style.display = 'block';
+            window.scrollTo({ top: errorDiv.offsetTop, behavior: 'smooth' });
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
+</script>

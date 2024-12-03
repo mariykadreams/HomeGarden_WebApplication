@@ -4,20 +4,37 @@
 
 <h1>@ViewData["Title"]</h1>
 
-<nav class="nav flex-column">
+<nav class="nav flex-column mb-4">
     <a class="nav-link" href="@Url.Action("ViewTable", "Admin")">Database Views</a>
     <a class="nav-link" href="@Url.Action("PlantPopularity", "Admin")">Plant Popularity Statistics</a>
 </nav>
 
+<div class="row">
+    <div class="col-12 mb-4">
+        <button id="loadPlantPopularityBtn" class="btn btn-primary">Plant Popularity Statistics</button>
+    </div>
+</div>
 
+<div id="plantPopularityContainer"></div>
 
-<button id="loadTableBtn" class="btn btn-primary">Load Action Frequencies</button>
+<div class="row">
+    <div class="col-12 mb-4">
+        <button id="loadCategoryStatsBtn" class="btn btn-primary">Load Category Statistics</button>
+    </div>
+</div>
+
+<div id="categoryStatsContainer"></div>
+
+<div class="row mt-4">
+    <div class="col-12 mb-4">
+        <button id="loadTableBtn" class="btn btn-primary">Load Action Frequencies</button>
+    </div>
+</div>
 
 <div id="tableContainer"></div>
 
-<div class="container mt-4" style="margin-top=20px">
+<div class="container mt-4">
     <h2 class="mb-4">Plant Care Schedule Calculator</h2>
-
     <form id="plantActionForm" class="mb-4">
         <div class="row">
             <div class="col-md-4">
@@ -51,13 +68,40 @@
             </div>
         </div>
     </form>
-
     <div id="resultsContainer"></div>
 </div>
 
 @section Scripts {
     <script>
         $(document).ready(function () {
+            $("#loadPlantPopularityBtn").click(function () {
+                $.ajax({
+                    url: '@Url.Action("PlantPopularity", "Admin")',
+                    type: 'GET',
+                    success: function (result) {
+                        $("#plantPopularityContainer").html(result);
+                    },
+                    error: function (error) {
+                        console.error('Error loading plant popularity:', error);
+                        $("#plantPopularityContainer").html('<div class="alert alert-danger">Error loading plant popularity statistics. Please try again.</div>');
+                    }
+                });
+            });
+
+            $("#loadCategoryStatsBtn").click(function () {
+                $.ajax({
+                    url: '@Url.Action("CategoryStatistics", "Admin")',
+                    type: 'GET',
+                    success: function (result) {
+                        $("#categoryStatsContainer").html(result);
+                    },
+                    error: function (error) {
+                        console.error('Error loading category statistics:', error);
+                        $("#categoryStatsContainer").html('<div class="alert alert-danger">Error loading category statistics. Please try again.</div>');
+                    }
+                });
+            });
+
             $("#loadTableBtn").click(function () {
                 $.ajax({
                     url: '@Url.Action("GetActionFrequenciesSummary", "Admin")',

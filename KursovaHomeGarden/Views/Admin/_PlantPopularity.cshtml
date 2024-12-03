@@ -1,12 +1,6 @@
 ﻿@model IEnumerable<dynamic>
 
-@{
-    ViewData["Title"] = "Plant Popularity Statistics";
-}
-
 <div class="container mt-4">
-    <h1 class="mb-4">@ViewData["Title"]</h1>
-
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -23,7 +17,6 @@
                             <tr>
                                 <td>@plant.Name</td>
                                 <td>@plant.Popularity</td>
-                                
                             </tr>
                         }
                     </tbody>

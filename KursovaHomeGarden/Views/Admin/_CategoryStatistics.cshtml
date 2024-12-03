@@ -1,0 +1,28 @@
+﻿@model IEnumerable<dynamic>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Category Statistics</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Average Price</th>
+                    <th>Number of Users</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var stat in Model)
+                {
+                    <tr>
+                        <td>@stat.CategoryName</td>
+                        <td>@stat.AveragePrice.ToString("C2")</td>
+                        <td>@stat.UserCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -47,10 +47,11 @@ namespace KursovaHomeGarden.Controllers
             return View();
         }
 
+        [HttpGet]
         public IActionResult PlantPopularity()
         {
             var plantStats = GetPlantPopularityStats();
-            return View("_PlantPopularity", plantStats);
+            return PartialView("_PlantPopularity", plantStats);
         }
 
         private List<dynamic> GetPlantPopularityStats()
@@ -81,11 +82,10 @@ namespace KursovaHomeGarden.Controllers
                         while (reader.Read())
                         {
                             dynamic plantStat = new ExpandoObject();
-                            plantStat.Name = reader.GetString(reader.GetOrdinal("PlantName")); 
-                            plantStat.Popularity = reader.GetInt32(reader.GetOrdinal("Popularity")); 
+                            plantStat.Name = reader.GetString(reader.GetOrdinal("PlantName"));
+                            plantStat.Popularity = reader.GetInt32(reader.GetOrdinal("Popularity"));
                             plantStats.Add(plantStat);
                         }
-
                     }
                 }
             }
@@ -295,6 +295,48 @@ namespace KursovaHomeGarden.Controllers
             {
                 return Json(new { success = false, message = $"Database connection error: {ex.Message}" });
             }
+        }
+
+        public IActionResult CategoryStatistics()
+        {
+            var stats = new List<dynamic>();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var query = @"
+                    SELECT 
+                        c.category_name AS CategoryName, 
+                        AVG(p.price) AS average_price, 
+                        COUNT(DISTINCT up.user_id) AS user_count 
+                    FROM 
+                        User_Plants up
+                    JOIN 
+                        Plants p ON up.plant_id = p.plant_id 
+                    JOIN 
+                        Categories c ON p.category_id = c.category_id 
+                    GROUP BY 
+                        c.category_name
+                    ORDER BY 
+                        user_count DESC, 
+                        average_price DESC;";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            dynamic stat = new ExpandoObject();
+                            stat.CategoryName = reader.GetString(reader.GetOrdinal("CategoryName"));
+                            stat.AveragePrice = reader.GetDecimal(reader.GetOrdinal("average_price"));
+                            stat.UserCount = reader.GetInt32(reader.GetOrdinal("user_count"));
+                            stats.Add(stat);
+                        }
+                    }
+                }
+            }
+
+            return PartialView("_CategoryStatistics", stats);
         }
     }
 }

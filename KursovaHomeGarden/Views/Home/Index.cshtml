@@ -12,9 +12,18 @@
     </div>
 
     <div class="row pb-3">
-        @foreach (var plant in Model)
+        @if (!Model.Any())
         {
-            @await Html.PartialAsync("_PlantCard", plant)
+            <div class="alert alert-warning text-center w-100">
+                No plants are found.
+            </div>
+        }
+        else
+        {
+            @foreach (var plant in Model)
+            {
+                @await Html.PartialAsync("_PlantCard", plant)
+            }
         }
     </div>
 </div>

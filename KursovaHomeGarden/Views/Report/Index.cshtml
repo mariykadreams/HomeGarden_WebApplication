@@ -1,0 +1,23 @@
+﻿@{
+    ViewData["Title"] = "Generate Report";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Report Generation</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Generate Comprehensive Report</h5>
+            <p class="card-text">
+                Generate a detailed report containing:
+                <ul>
+                    <li>Plant Popularity Statistics</li>
+                    <li>Category Statistics</li>
+                    <li>User Information</li>
+                    <li>Action Frequencies</li>
+                </ul>
+            </p>
+            <a href="@Url.Action("GenerateReport", "Report")" class="btn btn-primary">Generate Report</a>
+        </div>
+    </div>
+</div>

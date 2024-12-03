@@ -20,27 +20,7 @@
                 </div>
             </div>
 
-            @if (ViewBag.UserPlant != null)
-            {
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="alert alert-success">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-check-circle-fill me-2"></i>
-                                <div>
-                                    <strong>You already own this plant!</strong>
-                                    <p class="mb-2">Purchased on: @(((UserPlant)ViewBag.UserPlant).purchase_date.ToString("MMMM dd, yyyy"))</p>
-                                    <div class="mt-2">
-                                        <a href="@Url.Action("MyPlants", "Home")" class="btn btn-success btn-sm">
-                                            <i class="bi bi-arrow-right me-1"></i> View in My Plants
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
+           
 
             <div class="row">
                 <div class="col-12 col-lg-3 offset-lg-1 text-center mb-3">

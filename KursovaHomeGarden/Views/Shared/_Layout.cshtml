@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using KursovaHomeGarden.Areas.Identity.Data
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -43,9 +44,18 @@
                                 <a class="dropdown-item" asp-area="" asp-controller="Fertilize" asp-action="Index">Fertilize</a>
                             </div>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link " asp-area="" asp-controller="Admin" asp-action="Index">Admin Page</a>
-                        </li>
+                        @if (User.IsInRole(SD.Role_Admin))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link " asp-area="" asp-controller="Admin" asp-action="Index">Admin Page</a>
+                            </li>
+                        }
+                        @if (User.IsInRole(SD.Role_Admin))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Report" asp-action="Index">Reports</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>

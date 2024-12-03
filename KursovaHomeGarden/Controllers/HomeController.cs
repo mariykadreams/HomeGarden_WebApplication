@@ -7,7 +7,6 @@ using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using System.Text;
 using KursovaHomeGarden.Services;
 using KursovaHomeGarden.Areas.Identity.Data;
 
@@ -49,50 +48,9 @@ namespace KursovaHomeGarden.Controllers
             catch (Exception ex)
             {
                 _logger.LogError($"Error retrieving plants: {ex.Message}");
-                return View( new KursovaHomeGarden.Models.Plant.Plant());
+                // Return an empty list instead of a single Plant object
+                return View(new List<Plant>());
             }
-        }
-
-        public IActionResult Index()
-        {
-            var plants = new List<Plant>();
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                try
-                {
-                    connection.Open();
-                    using var command = new SqlCommand(@"
-                        SELECT p.plant_id, p.name, p.description, p.price, p.img,
-                               c.category_id, c.category_name
-                        FROM Plants p
-                        LEFT JOIN Categories c ON p.category_id = c.category_id", connection);
-
-                    using var reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        plants.Add(new Plant
-                        {
-                            plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
-                            name = reader.GetString(reader.GetOrdinal("name")),
-                            description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
-                            price = reader.GetDecimal(reader.GetOrdinal("price")),
-                            img = reader.IsDBNull(reader.GetOrdinal("img")) ? null : reader.GetString(reader.GetOrdinal("img")),
-                            Category = new Category
-                            {
-                                category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
-                                category_name = reader.GetString(reader.GetOrdinal("category_name"))
-                            }
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Database error: {ex.Message}");
-                }
-            }
-
-            return View(plants);
         }
 
         [Authorize]
@@ -193,9 +151,6 @@ namespace KursovaHomeGarden.Controllers
                 return Json(new { success = false, message = "An error occurred while adding the plant to your collection." });
             }
         }
-
-        [Authorize]
-
 
         public IActionResult Details(int id)
         {
@@ -300,7 +255,6 @@ namespace KursovaHomeGarden.Controllers
             ViewBag.UserOwnsPlant = userOwnsPlant;
             return View(plant);
         }
-
 
         public IActionResult Privacy()
         {

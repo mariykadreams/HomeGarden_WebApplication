@@ -9,10 +9,18 @@
             <input type="hidden" asp-for="Action_frequency_id" />
 
             <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Interval</label>
+                <label class="col-sm-4 col-form-label">Interval (in days)</label>
                 <div class="col-sm-8">
                     <input class="form-control" asp-for="Interval" />
                     <span asp-validation-for="Interval" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label">Action Type</label>
+                <div class="col-sm-8">
+                    <select class="form-control" asp-for="action_type_id" asp-items="ViewBag.ActionTypes"></select>
+                    <span asp-validation-for="action_type_id" class="text-danger"></span>
                 </div>
             </div>
 
@@ -37,14 +45,6 @@
                 <div class="col-sm-8">
                     <select class="form-control" asp-for="season_id" asp-items="ViewBag.Seasons"></select>
                     <span asp-validation-for="season_id" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <label class="col-sm-4 col-form-label">Action Type</label>
-                <div class="col-sm-8">
-                    <select class="form-control" asp-for="action_type_id" asp-items="ViewBag.ActionTypes"></select>
-                    <span asp-validation-for="action_type_id" class="text-danger"></span>
                 </div>
             </div>
 

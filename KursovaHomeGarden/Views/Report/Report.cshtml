@@ -1,0 +1,105 @@
+﻿@model ReportData
+
+@{
+    ViewData["Title"] = "Garden Management System Report";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>System Report</h1>
+        <div>
+            <small class="text-muted">Generated: @Model.GeneratedAt.ToString("f")</small>
+            <a href="@Url.Action("ExportToPdf", "Report")" class="btn btn-secondary ml-2">
+                Export to PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Plant Popularity Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Plant Popularity</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Plant Name</th>
+                            <th>Popularity Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plant in Model.PlantPopularity)
+                        {
+                            <tr>
+                                <td>@plant.PlantName</td>
+                                <td>@plant.Popularity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Statistics Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Category Statistics</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Average Price</th>
+                            <th>User Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var category in Model.CategoryStatistics)
+                        {
+                            <tr>
+                                <td>@category.CategoryName</td>
+                                <td>@category.AveragePrice.ToString("C")</td>
+                                <td>@category.UserCount</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Information Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">User Information</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>@user.UserName</td>
+                                <td>@user.Role</td>
+                                <td>@(user.AmountOfMoney?.ToString("C") ?? "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

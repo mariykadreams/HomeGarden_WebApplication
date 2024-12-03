@@ -12,14 +12,16 @@
     <div class="col-md-2">
         <label for="minPrice" class="form-label">Min Price</label>
         <input type="number" class="form-control" id="minPrice" name="minPrice"
-               value="@ViewBag.CurrentMinPrice" step="0.01" min="0">
+               value="@ViewBag.CurrentMinPrice" placeholder="-" step="0.01" min="0">
     </div>
 
     <div class="col-md-2">
         <label for="maxPrice" class="form-label">Max Price</label>
         <input type="number" class="form-control" id="maxPrice" name="maxPrice"
-               value="@ViewBag.CurrentMaxPrice" step="0.01" min="0">
+               value="@ViewBag.CurrentMaxPrice" placeholder="-" step="0.01" min="0">
     </div>
+
+
 
     <div class="col-md-2">
         <label for="categoryId" class="form-label">Category</label>
@@ -92,21 +94,30 @@
 
 <script>
     document.getElementById('filterForm').addEventListener('submit', function (e) {
-        const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
-        const maxPrice = parseFloat(document.getElementById('maxPrice').value) || 0;
+        const minPriceInput = document.getElementById('minPrice');
+        const maxPriceInput = document.getElementById('maxPrice');
+
+        const minPrice = minPriceInput.value === "-" || minPriceInput.value === "" ? null : parseFloat(minPriceInput.value);
+        const maxPrice = maxPriceInput.value === "-" || maxPriceInput.value === "" ? null : parseFloat(maxPriceInput.value);
+
         const errorMessages = [];
         const errorDiv = document.getElementById('errorMessages');
 
-        if (minPrice < 0) {
+        if (minPrice !== null && minPrice < 0) {
             errorMessages.push('Minimum price cannot be less than 0');
         }
 
-        if (maxPrice < 0) {
+        if (maxPrice !== null && maxPrice < 0) {
             errorMessages.push('Maximum price cannot be less than 0');
         }
 
-        if (maxPrice > 0 && minPrice > maxPrice) {
+        if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
             errorMessages.push('Minimum price cannot be greater than maximum price');
+        }
+
+        // Если задан только один из параметров, выдаем ошибку
+        if ((minPrice !== null && maxPrice === null) || (minPrice === null && maxPrice !== null)) {
+            errorMessages.push('Both minimum and maximum prices must be specified');
         }
 
         if (errorMessages.length > 0) {
@@ -118,4 +129,5 @@
             errorDiv.style.display = 'none';
         }
     });
+
 </script>

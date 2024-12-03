@@ -48,7 +48,6 @@ namespace KursovaHomeGarden.Controllers
         }
 
         [HttpGet]
-        [HttpGet]
         public IActionResult Index()
         {
             List<Plant> plants = new List<Plant>();

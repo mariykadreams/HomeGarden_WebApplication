@@ -15,8 +15,6 @@
                         <tr>
                             <th>Plant Name</th>
                             <th>Number of Users</th>
-                            <th>Popularity Percentage</th>
-                            <th>Popularity Graph</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -24,19 +22,8 @@
                         {
                             <tr>
                                 <td>@plant.Name</td>
-                                <td>@plant.UserCount</td>
-                                <td>@plant.Percentage%</td>
-                                <td>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-success"
-                                             role="progressbar"
-                                             style="width: @plant.Percentage%"
-                                             aria-valuenow="@plant.Percentage"
-                                             aria-valuemin="0"
-                                             aria-valuemax="100">
-                                        </div>
-                                    </div>
-                                </td>
+                                <td>@plant.Popularity</td>
+                                
                             </tr>
                         }
                     </tbody>

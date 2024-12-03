@@ -50,7 +50,7 @@ namespace KursovaHomeGarden.Controllers
         public IActionResult PlantPopularity()
         {
             var plantStats = GetPlantPopularityStats();
-            return View(plantStats);
+            return View("_PlantPopularity", plantStats);
         }
 
         private List<dynamic> GetPlantPopularityStats()
@@ -81,12 +81,11 @@ namespace KursovaHomeGarden.Controllers
                         while (reader.Read())
                         {
                             dynamic plantStat = new ExpandoObject();
-                            plantStat.PlantId = reader.GetInt32(reader.GetOrdinal("plant_id"));
-                            plantStat.Name = reader.GetString(reader.GetOrdinal("name"));
-                            plantStat.UserCount = reader.GetInt32(reader.GetOrdinal("user_count"));
-                            plantStat.Percentage = reader.GetDecimal(reader.GetOrdinal("percentage"));
+                            plantStat.Name = reader.GetString(reader.GetOrdinal("PlantName")); 
+                            plantStat.Popularity = reader.GetInt32(reader.GetOrdinal("Popularity")); 
                             plantStats.Add(plantStat);
                         }
+
                     }
                 }
             }
@@ -238,7 +237,7 @@ namespace KursovaHomeGarden.Controllers
                 }
             }
 
-            return View(users);
+            return View("_ViewTable", users);
         }
 
         [HttpPost]

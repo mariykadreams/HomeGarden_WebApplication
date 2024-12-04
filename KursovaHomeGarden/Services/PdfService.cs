@@ -80,7 +80,10 @@ public class PdfService : IPdfService
                 userTable.AddCell(new PdfPCell(new Phrase(user.AmountOfMoney?.ToString("C") ?? "N/A", normalFont)));
             }
             document.Add(userTable);
-
+            Paragraph dateGeneratedBottom = new Paragraph($"Report Generated On: {reportData.GeneratedAt:f}", normalFont);
+            dateGeneratedBottom.Alignment = Element.ALIGN_RIGHT;
+            dateGeneratedBottom.SpacingBefore = 30f;
+            document.Add(dateGeneratedBottom);
             document.Close();
             return ms.ToArray();
         }

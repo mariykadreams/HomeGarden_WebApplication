@@ -253,5 +253,121 @@ namespace KursovaHomeGarden.Controllers
                 }
             }
         }
+
+        [HttpPost]
+        public IActionResult RecordCareAction(int userPlantId, int actionTypeId, string interval)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    // Verify ownership
+                    using (var checkCommand = new SqlCommand(
+                        "SELECT COUNT(1) FROM User_Plants WHERE user_plant_id = @userPlantId AND user_id = @userId",
+                        connection))
+                    {
+                        checkCommand.Parameters.AddWithValue("@userPlantId", userPlantId);
+                        checkCommand.Parameters.AddWithValue("@userId", userId);
+
+                        if ((int)checkCommand.ExecuteScalar() == 0)
+                        {
+                            return Json(new { success = false, message = "Plant not found or you don't have permission." });
+                        }
+                    }
+
+                    // Calculate next care date based on interval
+                    DateTime nextCareDate = CalculateNextCareDate(interval);
+
+                    using (var command = new SqlCommand(@"
+                INSERT INTO Plant_Care_History (action_date, next_care_date, action_type_id, user_plant_id)
+                VALUES (GETUTCDATE(), @nextCareDate, @actionTypeId, @userPlantId)",
+                        connection))
+                    {
+                        command.Parameters.AddWithValue("@nextCareDate", nextCareDate);
+                        command.Parameters.AddWithValue("@actionTypeId", actionTypeId);
+                        command.Parameters.AddWithValue("@userPlantId", userPlantId);
+
+                        command.ExecuteNonQuery();
+                        return Json(new { success = true });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error recording care action: {ex.Message}");
+                    return Json(new { success = false, message = "An error occurred while recording the care action." });
+                }
+            }
+        }
+
+        private DateTime CalculateNextCareDate(string interval)
+        {
+            var today = DateTime.UtcNow;
+
+            // Parse interval string (e.g., "Every 2 days", "Weekly", "Monthly")
+            if (interval.Contains("day", StringComparison.OrdinalIgnoreCase))
+            {
+                int days = int.Parse(string.Join("", interval.Where(char.IsDigit)));
+                return today.AddDays(days);
+            }
+            else if (interval.Contains("week", StringComparison.OrdinalIgnoreCase))
+            {
+                return today.AddDays(7);
+            }
+            else if (interval.Contains("month", StringComparison.OrdinalIgnoreCase))
+            {
+                return today.AddMonths(1);
+            }
+
+            // Default to 7 days if interval format is unknown
+            return today.AddDays(7);
+        }
+
+        public IActionResult GetCareHistory(int userPlantId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var careHistory = new List<dynamic>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                    using var command = new SqlCommand(@"
+                SELECT pch.care_id, pch.action_date, pch.next_care_date, at.type_name
+                FROM Plant_Care_History pch
+                JOIN ActionTypes at ON pch.action_type_id = at.action_type_id
+                JOIN User_Plants up ON pch.user_plant_id = up.user_plant_id
+                WHERE pch.user_plant_id = @userPlantId AND up.user_id = @userId
+                ORDER BY pch.action_date DESC",
+                        connection);
+
+                    command.Parameters.AddWithValue("@userPlantId", userPlantId);
+                    command.Parameters.AddWithValue("@userId", userId);
+
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        careHistory.Add(new
+                        {
+                            ActionDate = ((DateTime)reader["action_date"]).ToString("MMM dd, yyyy HH:mm"),
+                            NextCareDate = ((DateTime)reader["next_care_date"]).ToString("MMM dd, yyyy"),
+                            ActionType = reader["type_name"].ToString()
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error getting care history: {ex.Message}");
+                    return PartialView("_CareHistory", new List<dynamic>());
+                }
+            }
+
+            return PartialView("_CareHistory", careHistory);
+        }
+
     }
 }

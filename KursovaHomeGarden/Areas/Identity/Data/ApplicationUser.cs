@@ -13,5 +13,9 @@ public class ApplicationUser : IdentityUser
     [PersonalData]
     [Column(TypeName = "decimal(18, 2)")]
     public decimal? AmountOfMoney { get; set; }
+
+    [PersonalData]
+    [Column(TypeName = "datetime2")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 

@@ -1,0 +1,24 @@
+﻿@model IEnumerable<dynamic>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Action Type</th>
+                <th>Date Performed</th>
+                <th>Next Care Due</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var care in Model)
+            {
+                <tr>
+                    <td>@care.ActionType</td>
+                    <td>@care.ActionDate</td>
+                    <td>@care.NextCareDate</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+

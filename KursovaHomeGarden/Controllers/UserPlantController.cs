@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using KursovaHomeGarden.Models.CareLevel;
+using System.Dynamic;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -92,6 +93,7 @@ namespace KursovaHomeGarden.Controllers
 
             Plant plant = null;
             UserPlant userPlant = null;
+            List<dynamic> careHistory = new List<dynamic>();
 
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -204,6 +206,45 @@ namespace KursovaHomeGarden.Controllers
                                 }
                             });
                         }
+                      
+                        
+                    }
+                    if (userPlant != null)
+                    {
+                        using (SqlConnection conn = new SqlConnection(_connectionString))
+                        {
+                            string query = @"
+        SELECT pch.care_id, pch.action_date, pch.next_care_date, at.type_name
+        FROM Plant_Care_History pch
+        JOIN ActionTypes at ON pch.action_type_id = at.action_type_id
+        WHERE pch.user_plant_id = @UserPlantId
+        ORDER BY pch.action_date DESC";
+
+                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@UserPlantId", userPlant.user_plant_id);
+                                conn.Open();
+
+                                using (SqlDataReader innerReader = cmd.ExecuteReader())
+                                {
+                                    while (innerReader.Read())
+                                    {
+                                        dynamic row = new ExpandoObject();
+                                        row.CareId = innerReader["care_id"];
+                                        row.ActionDate = innerReader["action_date"];
+                                        row.NextCareDate = innerReader["next_care_date"];
+                                        row.TypeName = innerReader["type_name"];
+                                        careHistory.Add(row);
+                                    }
+                                }
+                            }
+                        }
+
+                        ViewBag.CareHistory = careHistory;
+                    }
+                    else
+                    {
+                        return RedirectToAction(nameof(MyPlant)); 
                     }
                 }
                 catch (Exception ex)
@@ -253,6 +294,7 @@ namespace KursovaHomeGarden.Controllers
                 }
             }
         }
+
 
         [HttpPost]
         public IActionResult RecordCareAction(int userPlantId, int actionTypeId, string interval)
@@ -307,26 +349,16 @@ namespace KursovaHomeGarden.Controllers
         {
             var today = DateTime.UtcNow;
 
-            // Parse interval string (e.g., "Every 2 days", "Weekly", "Monthly")
-            if (interval.Contains("day", StringComparison.OrdinalIgnoreCase))
+            // Try to parse the interval string to an integer
+            if (int.TryParse(interval, out int intervalDays))
             {
-                int days = int.Parse(string.Join("", interval.Where(char.IsDigit)));
-                return today.AddDays(days);
-            }
-            else if (interval.Contains("week", StringComparison.OrdinalIgnoreCase))
-            {
-                return today.AddDays(7);
-            }
-            else if (interval.Contains("month", StringComparison.OrdinalIgnoreCase))
-            {
-                return today.AddMonths(1);
+                return today.AddDays(intervalDays);
             }
 
-            // Default to 7 days if interval format is unknown
+            // Default fallback - if parsing fails, return 7 days from now
             return today.AddDays(7);
         }
 
-        [HttpGet]
         public IActionResult GetCareHistory(int userPlantId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -344,7 +376,7 @@ namespace KursovaHomeGarden.Controllers
                 JOIN User_Plants up ON pch.user_plant_id = up.user_plant_id
                 WHERE pch.user_plant_id = @userPlantId AND up.user_id = @userId
                 ORDER BY pch.action_date DESC",
-                            connection);
+                        connection);
 
                     command.Parameters.AddWithValue("@userPlantId", userPlantId);
                     command.Parameters.AddWithValue("@userId", userId);
@@ -359,16 +391,19 @@ namespace KursovaHomeGarden.Controllers
                             ActionType = reader["type_name"].ToString()
                         });
                     }
-
-                    return PartialView("_CareHistory", careHistory);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"Error getting care history: {ex.Message}");
-                    return Json(new { error = "Failed to load care history. Please try again." });
+                    return PartialView("_CareHistory", new List<dynamic>());
                 }
             }
+
+            return PartialView("_CareHistory", careHistory);
         }
 
+
     }
+
 }
+

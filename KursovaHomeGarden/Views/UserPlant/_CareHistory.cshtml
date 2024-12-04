@@ -1,24 +1,32 @@
 ﻿@model IEnumerable<dynamic>
 
-<div class="table-responsive">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Action Type</th>
-                <th>Date Performed</th>
-                <th>Next Care Due</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var care in Model)
-            {
+<div class="table-responsive mt-3">
+    @if (Model != null && Model.Any())
+    {
+        <table class="table table-striped table-bordered">
+            <thead class="table-light">
                 <tr>
-                    <td>@care.ActionType</td>
-                    <td>@care.ActionDate</td>
-                    <td>@care.NextCareDate</td>
+                    <th>Action Type</th>
+                    <th>Date Performed</th>
+                    <th>Next Care Due</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var care in Model)
+                {
+                    <tr>
+                        <td>@care.ActionType</td>
+                        <td>@care.ActionDate</td>
+                        <td>@care.NextCareDate</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No care history recorded yet. Record your first care action using the buttons above!
+        </div>
+    }
 </div>
-

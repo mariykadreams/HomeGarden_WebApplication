@@ -326,6 +326,7 @@ namespace KursovaHomeGarden.Controllers
             return today.AddDays(7);
         }
 
+        [HttpGet]
         public IActionResult GetCareHistory(int userPlantId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -343,7 +344,7 @@ namespace KursovaHomeGarden.Controllers
                 JOIN User_Plants up ON pch.user_plant_id = up.user_plant_id
                 WHERE pch.user_plant_id = @userPlantId AND up.user_id = @userId
                 ORDER BY pch.action_date DESC",
-                        connection);
+                            connection);
 
                     command.Parameters.AddWithValue("@userPlantId", userPlantId);
                     command.Parameters.AddWithValue("@userId", userId);
@@ -358,15 +359,15 @@ namespace KursovaHomeGarden.Controllers
                             ActionType = reader["type_name"].ToString()
                         });
                     }
+
+                    return PartialView("_CareHistory", careHistory);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"Error getting care history: {ex.Message}");
-                    return PartialView("_CareHistory", new List<dynamic>());
+                    return Json(new { error = "Failed to load care history. Please try again." });
                 }
             }
-
-            return PartialView("_CareHistory", careHistory);
         }
 
     }

@@ -475,6 +475,7 @@ namespace KursovaHomeGarden.Controllers
             {
                 string imageFileName = null;
 
+                // Получение имени изображения растения
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     string getImageQuery = "SELECT img FROM Plants WHERE plant_id = @plant_id";
@@ -487,6 +488,7 @@ namespace KursovaHomeGarden.Controllers
                     }
                 }
 
+                // Удаление файла изображения, если он существует
                 if (!string.IsNullOrEmpty(imageFileName))
                 {
                     var imageFilePath = Path.Combine(_environment.WebRootPath, "images/plants", imageFileName);
@@ -496,33 +498,53 @@ namespace KursovaHomeGarden.Controllers
                     }
                 }
 
+                // Удаление записей из связанных таблиц
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    string deleteActionFrequencies = "DELETE FROM ActionFrequencies WHERE plant_id = @plant_id";
-                    string deletePlant = "DELETE FROM Plants WHERE plant_id = @plant_id";
+                    string deleteCareHistoryQuery = "DELETE FROM Plant_Care_History WHERE user_plant_id IN (SELECT user_plant_id FROM User_Plants WHERE plant_id = @plant_id)";
+                    string deleteUserPlantsQuery = "DELETE FROM User_Plants WHERE plant_id = @plant_id";
+                    string deleteActionFrequenciesQuery = "DELETE FROM ActionFrequencies WHERE plant_id = @plant_id";
+                    string deletePlantQuery = "DELETE FROM Plants WHERE plant_id = @plant_id";
 
                     connection.Open();
 
-                    using (SqlCommand command = new SqlCommand(deleteActionFrequencies, connection))
+                    // Удаление из Plant_Care_History
+                    using (SqlCommand command = new SqlCommand(deleteCareHistoryQuery, connection))
                     {
                         command.Parameters.AddWithValue("@plant_id", id);
                         command.ExecuteNonQuery();
                     }
 
-                    using (SqlCommand command = new SqlCommand(deletePlant, connection))
+                    // Удаление из User_Plants
+                    using (SqlCommand command = new SqlCommand(deleteUserPlantsQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@plant_id", id);
+                        command.ExecuteNonQuery();
+                    }
+
+                    // Удаление из ActionFrequencies
+                    using (SqlCommand command = new SqlCommand(deleteActionFrequenciesQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@plant_id", id);
+                        command.ExecuteNonQuery();
+                    }
+
+                    // Удаление из Plants
+                    using (SqlCommand command = new SqlCommand(deletePlantQuery, connection))
                     {
                         command.Parameters.AddWithValue("@plant_id", id);
                         command.ExecuteNonQuery();
                     }
                 }
 
-                return Json(new { success = true, message = "Plant, related references, and image deleted successfully." });
+                return Json(new { success = true, message = "Plant, related records, and image deleted successfully." });
             }
             catch (Exception ex)
             {
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
+
 
 
     }

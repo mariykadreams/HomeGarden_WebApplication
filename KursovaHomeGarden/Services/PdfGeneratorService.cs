@@ -10,7 +10,7 @@ using System.Security.Claims;
 
 public class PdfGeneratorService
 {
-    public byte[] GeneratePlantDetailsPdf(Plant plant, List<dynamic> careHistory)
+    public byte[] GeneratePlantDetailsPdf(Plant plant, List<dynamic> careHistory, string userEmail)
     {
         using (var memoryStream = new MemoryStream())
         {
@@ -32,6 +32,10 @@ public class PdfGeneratorService
             title.Alignment = Element.ALIGN_CENTER;
             document.Add(title);
             document.Add(Chunk.NEWLINE);
+
+            Paragraph emailParagraph = new Paragraph($"User: {userEmail}", normalFont);
+            emailParagraph.Alignment = Element.ALIGN_RIGHT;
+            document.Add(emailParagraph);
 
             // Basic Plant Information
             PdfPTable infoTable = new PdfPTable(2);
@@ -129,6 +133,10 @@ public class PdfGeneratorService
                 document.Add(new Paragraph("No care history recorded yet.", normalFont));
             }
 
+            document.Add(Chunk.NEWLINE);
+            Paragraph generationDate = new Paragraph($"Generated on: {DateTime.Now:dd.MM.yyyy HH:mm:ss}", normalFont);
+            generationDate.Alignment = Element.ALIGN_RIGHT;
+            document.Add(generationDate);
             // Close the document
             document.Close();
 

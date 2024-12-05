@@ -563,6 +563,7 @@ namespace KursovaHomeGarden.Controllers
         public IActionResult DownloadPlantDetailsPdf(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
             var (plant, careHistory) = GetPlantDetailsForPdf(id, userId);
 
@@ -572,7 +573,7 @@ namespace KursovaHomeGarden.Controllers
             }
 
             var pdfGenerator = new PdfGeneratorService();
-            byte[] pdfBytes = pdfGenerator.GeneratePlantDetailsPdf(plant, careHistory);
+            byte[] pdfBytes = pdfGenerator.GeneratePlantDetailsPdf(plant, careHistory, userEmail);
 
             return File(pdfBytes, "application/pdf", $"{plant.name}_Details.pdf");
         }

@@ -9,11 +9,13 @@
     <a class="nav-link" href="@Url.Action("PlantPopularity", "Admin")">Plant Popularity Statistics</a>
 </nav>
 
-<div class="row">
+<div class="row mt-4">
     <div class="col-12 mb-4">
-        <button id="loadPlantPopularityBtn" class="btn btn-primary">Plant Popularity Statistics</button>
+        <button id="loadActionStatisticsBtn" class="btn btn-primary">Load Action Statistics</button>
     </div>
 </div>
+<div id="actionStatisticsContainer"></div>
+
 
 <div id="plantPopularityContainer"></div>
 
@@ -112,6 +114,20 @@
                     error: function (error) {
                         console.error('Error loading action frequencies:', error);
                         $("#tableContainer").html('<div class="alert alert-danger">Error loading data. Please try again.</div>');
+                    }
+                });
+            });
+
+            $("#loadActionStatisticsBtn").click(function () {
+                $.ajax({
+                    url: '@Url.Action("GetActionStatistics", "Admin")',
+                    type: 'POST',
+                    success: function (result) {
+                        $("#actionStatisticsContainer").html(result);
+                    },
+                    error: function (error) {
+                        console.error('Error loading action statistics:', error);
+                        $("#actionStatisticsContainer").html('<div class="alert alert-danger">Error loading action statistics. Please try again.</div>');
                     }
                 });
             });

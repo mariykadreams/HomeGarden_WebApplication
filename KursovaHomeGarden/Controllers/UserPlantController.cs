@@ -11,7 +11,7 @@ using System.Dynamic;
 
 namespace KursovaHomeGarden.Controllers
 {
-    [Authorize] // Add authorization at controller level
+    [Authorize] 
     public class UserPlantController : Controller
     {
         private readonly ILogger<UserPlantController> _logger;

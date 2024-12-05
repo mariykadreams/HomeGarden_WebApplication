@@ -47,33 +47,34 @@ namespace KursovaHomeGarden.Controllers
             return View();
         }
 
-        [HttpGet]
-        public IActionResult PlantPopularity()
+        [HttpPost]
+        public IActionResult GetActionStatistics()
         {
-            var plantStats = GetPlantPopularityStats();
-            return PartialView("_PlantPopularity", plantStats);
-        }
-
-        private List<dynamic> GetPlantPopularityStats()
-        {
-            var plantStats = new List<dynamic>();
+            var actionStatistics = new List<dynamic>();
 
             using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
                 var query = @"
-                    SELECT 
-                        p.name AS PlantName,
-                        COUNT(up.plant_id) AS Popularity
-                    FROM 
-                        [KursovaHomeGardenDB].[dbo].[User_Plants] up
-                    INNER JOIN 
-                        [KursovaHomeGardenDB].[dbo].[Plants] p ON up.plant_id = p.plant_id
-                    GROUP BY 
-                        p.name
-                    ORDER BY 
-                        Popularity DESC;
-                    ";
+            SELECT 
+                at.type_name AS action_type,
+                p.name AS plant_name,
+                af.[Interval] AS action_interval,
+                COUNT(pch.care_id) AS action_count
+            FROM 
+                Plant_Care_History pch
+            JOIN 
+                ActionTypes at ON pch.action_type_id = at.action_type_id
+            JOIN 
+                User_Plants up ON pch.user_plant_id = up.user_plant_id
+            JOIN 
+                Plants p ON up.plant_id = p.plant_id
+            JOIN 
+                ActionFrequencies af ON p.plant_id = af.plant_id AND at.action_type_id = af.action_type_id
+            GROUP BY 
+                at.type_name, p.name, af.[Interval]
+            ORDER BY 
+                action_count DESC;";
 
                 using (var command = new SqlCommand(query, connection))
                 {
@@ -81,16 +82,18 @@ namespace KursovaHomeGarden.Controllers
                     {
                         while (reader.Read())
                         {
-                            dynamic plantStat = new ExpandoObject();
-                            plantStat.Name = reader.GetString(reader.GetOrdinal("PlantName"));
-                            plantStat.Popularity = reader.GetInt32(reader.GetOrdinal("Popularity"));
-                            plantStats.Add(plantStat);
+                            dynamic stat = new ExpandoObject();
+                            stat.ActionType = reader.GetString(reader.GetOrdinal("action_type"));
+                            stat.PlantName = reader.GetString(reader.GetOrdinal("plant_name"));
+                            stat.ActionInterval = int.Parse(reader.GetString(reader.GetOrdinal("action_interval")));
+                            stat.ActionCount = reader.GetInt32(reader.GetOrdinal("action_count"));
+                            actionStatistics.Add(stat);
                         }
                     }
                 }
             }
 
-            return plantStats;
+            return PartialView("_ActionStatisticsTable", actionStatistics);
         }
 
         [HttpPost]

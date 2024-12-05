@@ -1,40 +1,46 @@
-﻿@model IEnumerable<dynamic>
-
-<div class="mt-4">
+﻿<div class="mt-4">
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Category Statistics</h4>
+            <h4 class="mb-0">Action Type Statistics</h4>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped table-bordered">
                     <thead class="table-light">
                         <tr>
-                            <th>Category</th>
-                            <th>Average Price</th>
-                            <th>Number of Users</th>
+                            <th>Action Type</th>
+                            <th>Plant Name</th>
+                            <th>Action Interval</th>
+                            <th>Action Count</th>
                         </tr>
                     </thead>
                     <tbody>
-                     
                             @foreach (var stat in Model)
                             {
                                 <tr>
                                     <td>
-                                        <span class="fw-semibold">@stat.CategoryName</span>
+                                        <span class="fw-semibold">@stat.ActionType</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info">@stat.AveragePrice.ToString("C2")</span>
+                                        <span class="fw-normal">@stat.PlantName</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-success">@stat.UserCount</span>
+                                        <span class="badge bg-warning">@stat.ActionInterval</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">@stat.ActionCount</span>
                                     </td>
                                 </tr>
                             }
+                        
                        
                     </tbody>
                 </table>
             </div>
         </div>
+        <div class="card-footer text-muted">
+            <small>* Find the most popular plants with details by acrion type and how many users chose them.</small>
+        </div>
     </div>
 </div>
+

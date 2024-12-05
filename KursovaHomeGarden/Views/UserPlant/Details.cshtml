@@ -23,6 +23,12 @@
                         <small>Back to My Plants</small>
                     </a>
                 </div>
+                <div class="col-6 col-md-2">
+                    <a href="@Url.Action("DownloadPlantDetailsPdf", "UserPlant", new { id = Model.plant_id })"
+                       class="btn btn-outline-danger bg-gradient mb-5 fw-semibold btn-sm text-uppercase">
+                        <small>Download PDF</small>
+                    </a>
+                </div>
             </div>
 
             <div class="row">

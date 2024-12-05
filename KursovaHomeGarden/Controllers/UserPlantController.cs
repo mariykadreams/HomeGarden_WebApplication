@@ -349,13 +349,11 @@ namespace KursovaHomeGarden.Controllers
         {
             var today = DateTime.UtcNow;
 
-            // Try to parse the interval string to an integer
             if (int.TryParse(interval, out int intervalDays))
             {
                 return today.AddDays(intervalDays);
             }
 
-            // Default fallback - if parsing fails, return 7 days from now
             return today.AddDays(7);
         }
 
@@ -402,6 +400,182 @@ namespace KursovaHomeGarden.Controllers
             return PartialView("_CareHistory", careHistory);
         }
 
+
+
+        private (Plant plant, List<dynamic> careHistory) GetPlantDetailsForPdf(int id, string userId)
+        {
+            Plant plant = null;
+            List<dynamic> careHistory = new List<dynamic>();
+            UserPlant userPlant = null;
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                try
+                {
+                    connection.Open();
+
+                    // Check plant ownership
+                    using (var checkOwnershipCommand = new SqlCommand(
+                        "SELECT COUNT(1) FROM User_Plants WHERE plant_id = @PlantId AND user_id = @UserId",
+                        connection))
+                    {
+                        checkOwnershipCommand.Parameters.AddWithValue("@PlantId", id);
+                        checkOwnershipCommand.Parameters.AddWithValue("@UserId", userId);
+                        int ownershipCount = (int)checkOwnershipCommand.ExecuteScalar();
+
+                        if (ownershipCount == 0)
+                        {
+                            return (null, null);
+                        }
+                    }
+
+                    // Fetch UserPlant details
+                    using (var userPlantCommand = new SqlCommand(@"
+                SELECT user_plant_id, purchase_date 
+                FROM User_Plants 
+                WHERE plant_id = @PlantId AND user_id = @UserId", connection))
+                    {
+                        userPlantCommand.Parameters.AddWithValue("@PlantId", id);
+                        userPlantCommand.Parameters.AddWithValue("@UserId", userId);
+
+                        using var userPlantReader = userPlantCommand.ExecuteReader();
+                        if (userPlantReader.Read())
+                        {
+                            userPlant = new UserPlant
+                            {
+                                user_plant_id = userPlantReader.GetInt32(userPlantReader.GetOrdinal("user_plant_id")),
+                                purchase_date = userPlantReader.GetDateTime(userPlantReader.GetOrdinal("purchase_date")),
+                                plant_id = id,
+                                user_id = userId
+                            };
+                        }
+                    }
+
+                    // Fetch detailed plant information
+                    using var plantCommand = new SqlCommand(@"
+                SELECT p.plant_id, p.name, p.description, p.price, p.img,
+                       c.category_id, c.category_name,
+                       cl.care_level_id, cl.level_name,
+                       sr.sunlight_requirements_id, sr.light_intensity,
+                       af.Action_frequency_id, af.Interval, af.volume, af.notes,
+                       s.season_id, s.season_name,
+                       at.action_type_id, at.type_name
+                FROM Plants p
+                LEFT JOIN Categories c ON p.category_id = c.category_id
+                LEFT JOIN CareLevels cl ON p.care_level_id = cl.care_level_id
+                LEFT JOIN SunlightRequirements sr ON p.sunlight_requirements_id = sr.sunlight_requirements_id
+                LEFT JOIN ActionFrequencies af ON p.plant_id = af.plant_id
+                LEFT JOIN Seasons s ON af.season_id = s.season_id
+                LEFT JOIN ActionTypes at ON af.action_type_id = at.action_type_id
+                WHERE p.plant_id = @PlantId", connection);
+
+                    plantCommand.Parameters.AddWithValue("@PlantId", id);
+
+                    using var reader = plantCommand.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        if (plant == null)
+                        {
+                            plant = new Plant
+                            {
+                                plant_id = reader.GetInt32(reader.GetOrdinal("plant_id")),
+                                name = reader.GetString(reader.GetOrdinal("name")),
+                                description = reader.IsDBNull(reader.GetOrdinal("description")) ? null : reader.GetString(reader.GetOrdinal("description")),
+                                price = reader.GetDecimal(reader.GetOrdinal("price")),
+                                img = reader.IsDBNull(reader.GetOrdinal("img")) ? null : reader.GetString(reader.GetOrdinal("img")),
+                                Category = new Category
+                                {
+                                    category_id = reader.GetInt32(reader.GetOrdinal("category_id")),
+                                    category_name = reader.GetString(reader.GetOrdinal("category_name"))
+                                },
+                                CareLevel = new CareLevel
+                                {
+                                    care_level_id = reader.GetInt32(reader.GetOrdinal("care_level_id")),
+                                    level_name = reader.GetString(reader.GetOrdinal("level_name"))
+                                },
+                                SunlightRequirement = !reader.IsDBNull(reader.GetOrdinal("sunlight_requirements_id")) ? new SunlightRequirement
+                                {
+                                    sunlight_requirements_id = reader.GetInt32(reader.GetOrdinal("sunlight_requirements_id")),
+                                    light_intensity = reader.GetString(reader.GetOrdinal("light_intensity"))
+                                } : null,
+                                ActionFrequencies = new List<ActionFrequency>()
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("Action_frequency_id")))
+                        {
+                            plant.ActionFrequencies.Add(new ActionFrequency
+                            {
+                                Action_frequency_id = reader.GetInt32(reader.GetOrdinal("Action_frequency_id")),
+                                Interval = reader.GetString(reader.GetOrdinal("Interval")),
+                                volume = reader.IsDBNull(reader.GetOrdinal("volume")) ? null : reader.GetDecimal(reader.GetOrdinal("volume")),
+                                notes = reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes")),
+                                Season = new Season
+                                {
+                                    season_id = reader.GetInt32(reader.GetOrdinal("season_id")),
+                                    season_name = reader.GetString(reader.GetOrdinal("season_name"))
+                                },
+                                ActionType = new ActionType
+                                {
+                                    action_type_id = reader.GetInt32(reader.GetOrdinal("action_type_id")),
+                                    type_name = reader.GetString(reader.GetOrdinal("type_name"))
+                                }
+                            });
+                        }
+                    }
+
+                    // Fetch care history if user plant exists
+                    if (userPlant != null)
+                    {
+                        using (SqlCommand cmd = new SqlCommand(@"
+                    SELECT pch.care_id, pch.action_date, pch.next_care_date, at.type_name
+                    FROM Plant_Care_History pch
+                    JOIN ActionTypes at ON pch.action_type_id = at.action_type_id
+                    WHERE pch.user_plant_id = @UserPlantId
+                    ORDER BY pch.action_date DESC", connection))
+                        {
+                            cmd.Parameters.AddWithValue("@UserPlantId", userPlant.user_plant_id);
+
+                            using SqlDataReader innerReader = cmd.ExecuteReader();
+                            while (innerReader.Read())
+                            {
+                                dynamic row = new ExpandoObject();
+                                row.CareId = innerReader["care_id"];
+                                row.ActionDate = innerReader["action_date"];
+                                row.NextCareDate = innerReader["next_care_date"];
+                                row.TypeName = innerReader["type_name"];
+                                careHistory.Add(row);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Database error: {ex.Message}");
+                    return (null, null);
+                }
+            }
+
+            return (plant, careHistory);
+        }
+
+        [HttpGet]
+        public IActionResult DownloadPlantDetailsPdf(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var (plant, careHistory) = GetPlantDetailsForPdf(id, userId);
+
+            if (plant == null)
+            {
+                return NotFound();
+            }
+
+            var pdfGenerator = new PdfGeneratorService();
+            byte[] pdfBytes = pdfGenerator.GeneratePlantDetailsPdf(plant, careHistory);
+
+            return File(pdfBytes, "application/pdf", $"{plant.name}_Details.pdf");
+        }
 
     }
 

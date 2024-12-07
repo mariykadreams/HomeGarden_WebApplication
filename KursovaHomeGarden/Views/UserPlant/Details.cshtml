@@ -151,38 +151,34 @@
 @section Scripts {
     <script>
         function recordCareAction(userPlantId, actionTypeId, interval) {
-            // Find the most recent care action for this plant
             $.ajax({
-                url: '@Url.Action("GetMostRecentCareAction", "UserPlant")', // We'll need to add this method to the controller
+                url: '@Url.Action("GetMostRecentCareAction", "UserPlant")',
                 type: 'GET',
                 data: {
                     userPlantId: userPlantId,
                     actionTypeId: actionTypeId
                 },
                 success: function (response) {
-                    // If there's a previous care action and next care date is in the future
                     if (response.nextCareDate && new Date(response.nextCareDate) > new Date()) {
                         Swal.fire({
-                            title: 'Подтверждение ухода',
-                            text: 'Время следующего ухода еще не наступило. Вы уверены, что хотите выполнить действие?',
+                            title: 'Care Confirmation',
+                            text: 'The time for the next care has not yet arrived. Are you sure you want to proceed?',
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonColor: '#3085d6',
                             cancelButtonColor: '#d33',
-                            confirmButtonText: 'Да, выполнить',
-                            cancelButtonText: 'Отмена'
+                            confirmButtonText: 'Yes, proceed',
+                            cancelButtonText: 'Cancel'
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 performCareAction(userPlantId, actionTypeId, interval);
                             }
                         });
                     } else {
-                        // If no previous care action or next care date is in the past, proceed normally
                         performCareAction(userPlantId, actionTypeId, interval);
                     }
                 },
                 error: function () {
-                    // If there's an error checking previous care, proceed normally
                     performCareAction(userPlantId, actionTypeId, interval);
                 }
             });
@@ -203,8 +199,8 @@
                 success: function (response) {
                     if (response.success) {
                         Swal.fire({
-                            title: 'Успех!',
-                            text: 'Уход за растением записан успешно',
+                            title: 'Success!',
+                            text: 'Plant care has been recorded successfully',
                             icon: 'success',
                             confirmButtonText: 'OK'
                         }).then(() => {
@@ -212,7 +208,7 @@
                         });
                     } else {
                         Swal.fire({
-                            title: 'Ошибка!',
+                            title: 'Error!',
                             text: response.message,
                             icon: 'error',
                             confirmButtonText: 'OK'
@@ -221,8 +217,8 @@
                 },
                 error: function () {
                     Swal.fire({
-                        title: 'Ошибка!',
-                        text: 'Произошла ошибка при записи ухода за растением.',
+                        title: 'Error!',
+                        text: 'An error occurred while recording plant care.',
                         icon: 'error',
                         confirmButtonText: 'OK'
                     });

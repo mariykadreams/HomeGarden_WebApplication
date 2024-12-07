@@ -400,7 +400,37 @@ namespace KursovaHomeGarden.Controllers
             return PartialView("_CareHistory", careHistory);
         }
 
+        public IActionResult GetMostRecentCareAction(int userPlantId, int actionTypeId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                    using (var command = new SqlCommand(@"
+                SELECT TOP 1 next_care_date 
+                FROM Plant_Care_History 
+                WHERE user_plant_id = @UserPlantId AND action_type_id = @ActionTypeId
+                ORDER BY action_date DESC", connection))
+                    {
+                        command.Parameters.AddWithValue("@UserPlantId", userPlantId);
+                        command.Parameters.AddWithValue("@ActionTypeId", actionTypeId);
 
+                        var result = command.ExecuteScalar();
+                        if (result != null)
+                        {
+                            return Json(new { nextCareDate = (DateTime)result });
+                        }
+                        return Json(new { });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error fetching recent care action: {ex.Message}");
+                    return Json(new { });
+                }
+            }
+        }
 
         private (Plant plant, List<dynamic> careHistory) GetPlantDetailsForPdf(int id, string userId)
         {

@@ -5,6 +5,8 @@ using KursovaHomeGarden.Models;
 using KursovaHomeGarden.Models.Plant;
 using KursovaHomeGarden.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authorization;
+using System.Text;
+using KursovaHomeGarden.Services;
 
 namespace KursovaHomeGarden.Controllers
 {
@@ -12,31 +14,71 @@ namespace KursovaHomeGarden.Controllers
     public class ActionFrequencyController : Controller
     {
         private readonly string _connectionString;
+        private readonly IActionFrequencyService _actionFrequencyService;
         private readonly ILogger<ActionFrequencyController> _logger;
 
-        public ActionFrequencyController(IConfiguration configuration, ILogger<ActionFrequencyController> logger)
+        public ActionFrequencyController(IConfiguration configuration, ILogger<ActionFrequencyController> logger, IActionFrequencyService actionFrequencyService)
         {
             _connectionString = configuration.GetConnectionString("HomeGardenDbContextConnection");
             _logger = logger;
+            _actionFrequencyService = actionFrequencyService;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string searchTerm = null, int? plantId = null,
+              int? seasonId = null, int? actionTypeId = null, int? fertTypeId = null)
         {
             var actionFrequencies = new List<ActionFrequency>();
             try
             {
                 using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
-                    const string query = @"
+                    var queryBuilder = new StringBuilder(@"
                         SELECT af.*, p.name as plant_name, s.season_name, at.type_name as action_type_name, f.type_name as fertilizer_name
                         FROM ActionFrequencies af
                         LEFT JOIN Plants p ON af.plant_id = p.plant_id
                         LEFT JOIN Seasons s ON af.season_id = s.season_id
                         LEFT JOIN ActionTypes at ON af.action_type_id = at.action_type_id
-                        LEFT JOIN Fertilizes f ON af.Fert_type_id = f.Fert_type_id";
+                        LEFT JOIN Fertilizes f ON af.Fert_type_id = f.Fert_type_id
+                        WHERE 1=1");
 
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    var parameters = new List<SqlParameter>();
+
+                    if (!string.IsNullOrWhiteSpace(searchTerm))
                     {
+                        queryBuilder.Append(@" AND (p.name LIKE @searchTerm 
+                                          OR af.Interval LIKE @searchTerm 
+                                          OR at.type_name LIKE @searchTerm 
+                                          OR s.season_name LIKE @searchTerm)");
+                        parameters.Add(new SqlParameter("@searchTerm", $"%{searchTerm}%"));
+                    }
+
+                    if (plantId.HasValue)
+                    {
+                        queryBuilder.Append(" AND af.plant_id = @plantId");
+                        parameters.Add(new SqlParameter("@plantId", plantId.Value));
+                    }
+
+                    if (seasonId.HasValue)
+                    {
+                        queryBuilder.Append(" AND af.season_id = @seasonId");
+                        parameters.Add(new SqlParameter("@seasonId", seasonId.Value));
+                    }
+
+                    if (actionTypeId.HasValue)
+                    {
+                        queryBuilder.Append(" AND af.action_type_id = @actionTypeId");
+                        parameters.Add(new SqlParameter("@actionTypeId", actionTypeId.Value));
+                    }
+
+                    if (fertTypeId.HasValue)
+                    {
+                        queryBuilder.Append(" AND af.Fert_type_id = @fertTypeId");
+                        parameters.Add(new SqlParameter("@fertTypeId", fertTypeId.Value));
+                    }
+
+                    using (SqlCommand command = new SqlCommand(queryBuilder.ToString(), connection))
+                    {
+                        command.Parameters.AddRange(parameters.ToArray());
                         connection.Open();
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
@@ -52,18 +94,29 @@ namespace KursovaHomeGarden.Controllers
                                     season_id = reader.GetInt32(reader.GetOrdinal("season_id")),
                                     action_type_id = reader.GetInt32(reader.GetOrdinal("action_type_id")),
                                     Fert_type_id = reader.IsDBNull(reader.GetOrdinal("Fert_type_id")) ? null : reader.GetInt32(reader.GetOrdinal("Fert_type_id")),
-                                    Plant = new Plant
-                                    {
-                                        name = reader.GetString(reader.GetOrdinal("plant_name"))
-                                    },
+                                    Plant = new Plant { name = reader.GetString(reader.GetOrdinal("plant_name")) },
                                     Season = new Season { season_name = reader.GetString(reader.GetOrdinal("season_name")) },
                                     ActionType = new ActionType { type_name = reader.GetString(reader.GetOrdinal("action_type_name")) },
                                     Fertilize = reader.IsDBNull(reader.GetOrdinal("fertilizer_name")) ? null :
-                                              new Fertilize { type_name = reader.GetString(reader.GetOrdinal("fertilizer_name")) }
+                                               new Fertilize { type_name = reader.GetString(reader.GetOrdinal("fertilizer_name")) }
                                 });
                             }
                         }
                     }
+                }
+
+                LoadViewBagData();
+
+                // Store current filter values in ViewBag
+                ViewBag.CurrentSearchTerm = searchTerm;
+                ViewBag.CurrentPlantId = plantId;
+                ViewBag.CurrentSeasonId = seasonId;
+                ViewBag.CurrentActionTypeId = actionTypeId;
+                ViewBag.CurrentFertTypeId = fertTypeId;
+
+                if (actionFrequencies.Count == 0)
+                {
+                    ViewBag.WarningMessage = "No results found for the given search criteria.";
                 }
             }
             catch (Exception ex)
@@ -420,4 +473,6 @@ namespace KursovaHomeGarden.Controllers
             }
         }
     }
+
+   
 }

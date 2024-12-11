@@ -3,19 +3,111 @@
 
 <div class="row">
     <div class="col-md-10 mx-auto rounded border p-3">
-
         @if (TempData["Error"] != null)
         {
             <div class="alert alert-danger">
                 @TempData["Error"]
             </div>
         }
+
+        @if (ViewBag.WarningMessage != null)
+        {
+            <div class="alert alert-warning">
+                @ViewBag.WarningMessage
+            </div>
+        }
+
         <h2 class="text-center mb-4">Action Frequencies</h2>
 
         <div class="d-flex justify-content-between mb-3">
             <p class="m-0">Manage action frequencies associated with plants and care routines.</p>
             <a class="btn btn-primary" asp-action="Create">Create New</a>
         </div>
+
+        <form method="get" class="row g-3 mb-4" id="filterForm">
+            <div class="col-md-12 mb-3">
+                <label for="searchTerm" class="form-label">Search</label>
+                <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+                       value="@ViewBag.CurrentSearchTerm" placeholder="Search by plant name, interval, action type, or season...">
+            </div>
+
+            <div class="col-md-3">
+                <label for="plantId" class="form-label">Plant</label>
+                <select class="form-select" id="plantId" name="plantId">
+                    <option value="">All Plants</option>
+                    @foreach (var plant in ViewBag.Plants)
+                    {
+                        if (ViewBag.CurrentPlantId == int.Parse(plant.Value))
+                        {
+                            <option value="@plant.Value" selected>@plant.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@plant.Value">@plant.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="seasonId" class="form-label">Season</label>
+                <select class="form-select" id="seasonId" name="seasonId">
+                    <option value="">All Seasons</option>
+                    @foreach (var season in ViewBag.Seasons)
+                    {
+                        if (ViewBag.CurrentSeasonId == int.Parse(season.Value))
+                        {
+                            <option value="@season.Value" selected>@season.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@season.Value">@season.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="actionTypeId" class="form-label">Action Type</label>
+                <select class="form-select" id="actionTypeId" name="actionTypeId">
+                    <option value="">All Action Types</option>
+                    @foreach (var actionType in ViewBag.ActionTypes)
+                    {
+                        if (ViewBag.CurrentActionTypeId == int.Parse(actionType.Value))
+                        {
+                            <option value="@actionType.Value" selected>@actionType.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@actionType.Value">@actionType.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="fertTypeId" class="form-label">Fertilizer Type</label>
+                <select class="form-select" id="fertTypeId" name="fertTypeId">
+                    <option value="">All Fertilizer Types</option>
+                    @foreach (var fertilizer in ViewBag.Fertilizes)
+                    {
+                        if (ViewBag.CurrentFertTypeId == fertilizer.Value)
+                        {
+                            <option value="@fertilizer.Value" selected>@fertilizer.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@fertilizer.Value">@fertilizer.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">Clear Filters</a>
+            </div>
+        </form>
 
         <table class="table table-bordered table-striped">
             <thead class="table-primary text-center">
@@ -25,7 +117,7 @@
                     <th>Plant</th>
                     <th>Season</th>
                     <th>Action Type</th>
-                    <th>Fertilize Type</th>
+                    <th>Fertilizer Type</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -38,12 +130,11 @@
                             @(item.volume.HasValue ? item.volume.ToString() : "-")
                         </td>
                         <td class="text-center">@item.Plant?.name</td>
-                        <td class="text-center">@item.season_id</td>
-                        <td class="text-center">@item.action_type_id</td>
+                        <td class="text-center">@item.Season?.season_name</td>
+                        <td class="text-center">@item.ActionType?.type_name</td>
                         <td class="text-center">
-                            @(item.Fert_type_id.HasValue ? item.Fert_type_id.ToString() : "-")
+                            @(item.Fertilize?.type_name ?? "-")
                         </td>
-
                         <td class="text-center">
                             <a class="btn btn-sm btn-primary me-2" asp-action="Edit" asp-route-id="@item.Action_frequency_id">Edit</a>
                             <button class="btn btn-danger btn-sm" onclick="confirmDeleteActionFrequency(@item.Action_frequency_id)">Delete</button>
@@ -54,45 +145,59 @@
         </table>
     </div>
 </div>
-<script type="text/javascript">
-    function confirmDeleteActionFrequency(actionFrequencyId) {
-        Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Yes, delete it!",
-            cancelButtonText: "Cancel",
-            customClass: {
-                confirmButton: 'btn btn-primary me-2',
-                cancelButton: 'btn btn-danger'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: '/ActionFrequency/Delete/' + actionFrequencyId,
-                    type: 'POST',
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            Swal.fire({
-                                title: 'Deleted!',
-                                text: 'The action frequency has been deleted.',
-                                icon: 'success',
-                                customClass: {
-                                    confirmButton: 'btn btn-primary'
-                                },
-                                buttonsStyling: false
-                            }).then(() => {
-                                location.reload();
-                            });
-                        } else {
+
+@section Scripts {
+    <script type="text/javascript">
+        function confirmDeleteActionFrequency(actionFrequencyId) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to revert this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete it!",
+                cancelButtonText: "Cancel",
+                customClass: {
+                    confirmButton: 'btn btn-primary me-2',
+                    cancelButton: 'btn btn-danger'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/ActionFrequency/Delete/' + actionFrequencyId,
+                        type: 'POST',
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'Deleted!',
+                                    text: 'The action frequency has been deleted.',
+                                    icon: 'success',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Error!',
+                                    text: response.message || 'Something went wrong.',
+                                    icon: 'error',
+                                    customClass: {
+                                        confirmButton: 'btn btn-primary'
+                                    },
+                                    buttonsStyling: false
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
                             Swal.fire({
                                 title: 'Error!',
-                                text: response.message || 'Something went wrong.',
+                                text: 'Something went wrong while deleting the record.',
                                 icon: 'error',
                                 customClass: {
                                     confirmButton: 'btn btn-primary'
@@ -100,22 +205,9 @@
                                 buttonsStyling: false
                             });
                         }
-                    },
-                    error: function (xhr, status, error) {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Something went wrong while deleting the record.',
-                            icon: 'error',
-                            customClass: {
-                                confirmButton: 'btn btn-primary'
-                            },
-                            buttonsStyling: false
-                        });
-                    }
-                });
-            }
-        });
-    }
-
-
-</script>
+                    });
+                }
+            });
+        }
+    </script>
+}

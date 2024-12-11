@@ -28,6 +28,7 @@ builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IPdfService, PdfService>();
+builder.Services.AddScoped<IActionFrequencyService, ActionFrequencyService>();
 
 var app = builder.Build();
 

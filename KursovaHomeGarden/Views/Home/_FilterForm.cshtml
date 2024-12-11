@@ -115,7 +115,6 @@
             errorMessages.push('Minimum price cannot be greater than maximum price');
         }
 
-        // Если задан только один из параметров, выдаем ошибку
         if ((minPrice !== null && maxPrice === null) || (minPrice === null && maxPrice !== null)) {
             errorMessages.push('Both minimum and maximum prices must be specified');
         }

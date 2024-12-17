@@ -91,7 +91,7 @@
                     <option value="">All Fertilizer Types</option>
                     @foreach (var fertilizer in ViewBag.Fertilizes)
                     {
-                        if (ViewBag.CurrentFertTypeId == fertilizer.Value)
+                        if (ViewBag.CurrentFertTypeId?.ToString() == fertilizer.Value)
                         {
                             <option value="@fertilizer.Value" selected>@fertilizer.Text</option>
                         }

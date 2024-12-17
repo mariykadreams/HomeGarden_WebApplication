@@ -97,8 +97,8 @@
         const minPriceInput = document.getElementById('minPrice');
         const maxPriceInput = document.getElementById('maxPrice');
 
-        const minPrice = minPriceInput.value === "-" || minPriceInput.value === "" ? null : parseFloat(minPriceInput.value);
-        const maxPrice = maxPriceInput.value === "-" || maxPriceInput.value === "" ? null : parseFloat(maxPriceInput.value);
+        const minPrice = minPriceInput.value === "" ? null : parseFloat(minPriceInput.value);
+        const maxPrice = maxPriceInput.value === "" ? null : parseFloat(maxPriceInput.value);
 
         const errorMessages = [];
         const errorDiv = document.getElementById('errorMessages');
@@ -115,10 +115,6 @@
             errorMessages.push('Minimum price cannot be greater than maximum price');
         }
 
-        if ((minPrice !== null && maxPrice === null) || (minPrice === null && maxPrice !== null)) {
-            errorMessages.push('Both minimum and maximum prices must be specified');
-        }
-
         if (errorMessages.length > 0) {
             e.preventDefault();
             errorDiv.innerHTML = errorMessages.join('<br>');
@@ -128,5 +124,6 @@
             errorDiv.style.display = 'none';
         }
     });
+
 
 </script>
